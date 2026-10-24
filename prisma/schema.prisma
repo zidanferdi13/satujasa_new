@@ -19,6 +19,7 @@ model User {
   // Relations
   memberships   Member[]
   activityLogs  ActivityLog[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Organization {
@@ -50,8 +51,10 @@ model Member {
 
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  operator       Operator?
 
   @@unique([userId, organizationId])
+  @@index([organizationId, role])
 }
 
 enum MemberRole {
@@ -62,6 +65,7 @@ enum MemberRole {
 model Operator {
   id             String    @id @default(cuid())
   organizationId String
+  memberId       String    @unique // the login identity this staff profile belongs to
   email          String    @unique
   name           String
   isActive       Boolean   @default(true)
@@ -69,6 +73,7 @@ model Operator {
   updatedAt      DateTime  @updatedAt
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  member         Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
   files          File[]
   transactions   Transaction[]
   activityLogs   ActivityLog[]
@@ -191,6 +196,19 @@ enum TransactionStatus {
 }
 
 // Audit & Security
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique // sha256 of the emailed token; the token itself is never stored
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model ActivityLog {
   id             String    @id @default(cuid())
   organizationId String
