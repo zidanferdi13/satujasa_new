@@ -2,6 +2,7 @@ import { MemberRole } from "@prisma/client";
 import { requireRole } from "@/lib/require-role";
 import { prisma } from "@/lib/prisma";
 import { canAddOperator } from "@/lib/operator-quota";
+import { countSeatsUsed } from "@/lib/seats";
 import OperatorForm from "./operator-form";
 
 export default async function OwnerDashboardPage() {
@@ -15,7 +16,7 @@ export default async function OwnerDashboardPage() {
           where: { id: organizationId },
           select: { name: true, operatorLimit: true },
         }),
-        prisma.member.count({ where: { organizationId, role: MemberRole.OPERATOR } }),
+        countSeatsUsed(prisma, organizationId),
       ])
     : [null, 0];
   const operatorLimit = organization?.operatorLimit ?? 0;

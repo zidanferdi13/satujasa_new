@@ -15,6 +15,15 @@ import { canAddOperator } from "./operator-quota.ts";
 import { accessFor } from "./access.ts";
 import { formatRupiah } from "./money.ts";
 import { PLANS } from "./plans.ts";
+import {
+  CTA_COPY,
+  FAQ_COPY,
+  FEATURES_COPY,
+  FOOTER_COPY,
+  HERO_COPY,
+  PRICING_COPY,
+  planCtaLabel,
+} from "./landing-copy.ts";
 
 test("slugify trims, lowercases, strips accents and junk", () => {
   assert.equal(slugify("  Biro Jasa Maju  "), "biro-jasa-maju");
@@ -88,4 +97,46 @@ test("accessFor fails closed (BUG-07)", () => {
 test("reset throttle window is 60 seconds back", () => {
   const now = new Date("2026-10-25T00:01:00Z");
   assert.equal(resetThrottleCutoff(now).toISOString(), "2026-10-25T00:00:00.000Z");
+});
+
+test("FAQ ships five items and never the pending seat question", () => {
+  // docs/landing-copy-id.md marks FAQ #3 PENDING: it is wrong until the Designer
+  // re-issues it under the CEO seat rule, so shipping it would ship a false claim.
+  assert.equal(FAQ_COPY.items.length, 5);
+  assert.equal(
+    FAQ_COPY.items.some((item) => /operator yang bisa saya tambahkan/i.test(item.question)),
+    false,
+  );
+});
+
+test("landing copy only ever mentions a trial to deny one", () => {
+  // The FAQ has to answer the question ("Tidak."), so the check is: nowhere else may a
+  // trial be offered, and the one mention must be a refusal.
+  const trialItem = FAQ_COPY.items.find((item) => /uji coba/i.test(item.question));
+  assert.ok(trialItem);
+  assert.match(trialItem.answer, /^Tidak\./);
+
+  const offerSurface = JSON.stringify({
+    HERO_COPY,
+    FEATURES_COPY,
+    PRICING_COPY,
+    CTA_COPY,
+    FOOTER_COPY,
+  });
+  assert.equal(/gratis|free trial|uji coba/i.test(offerSurface), false);
+});
+
+test("landing prices are formatted by formatRupiah, Custom has no button", () => {
+  assert.match(HERO_COPY.microcopy, /^Mulai dari Rp 99\.000\/bulan\.$/);
+  assert.equal(formatRupiah(PLANS.PRO.priceMonthly), "Rp 249.000");
+  assert.equal(planCtaLabel("CUSTOM"), null);
+  assert.equal(planCtaLabel("BASIC"), "Pilih Basic");
+  assert.equal(planCtaLabel("PRO"), "Pilih Pro");
+});
+
+test("footer only links to sections that exist", () => {
+  const allowed = new Set(["#fitur", "#harga", "#faq"]);
+  for (const link of FOOTER_COPY.productLinks) {
+    assert.ok(allowed.has(link.href), `unexpected dead footer link ${link.href}`);
+  }
 });

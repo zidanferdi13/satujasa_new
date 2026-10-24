@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createOperatorSchema } from "@/lib/validations";
 import { badRequest, readJson } from "@/lib/http";
 import { canAddOperator } from "@/lib/operator-quota";
+import { countSeatsUsed } from "@/lib/seats";
 
 class OperatorLimitReached extends Error {}
 
@@ -41,9 +42,7 @@ export async function POST(request: Request) {
         SELECT "operatorLimit" FROM "Organization" WHERE id = ${organizationId} FOR UPDATE`;
       if (!organization) throw new Error("Organization not found");
 
-      const current = await tx.member.count({
-        where: { organizationId, role: MemberRole.OPERATOR },
-      });
+      const current = await countSeatsUsed(tx, organizationId);
       if (!canAddOperator(current, organization.operatorLimit)) {
         throw new OperatorLimitReached();
       }
