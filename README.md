@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Biro Jasa Management Platform
+
+A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle document services (STNK, Plate, Registration, SIM) with role-based dashboards, subscription billing via Midtrans, and revenue tracking.
+
+## Tech Stack
+
+- **Frontend/Backend**: Next.js 16 App Router + TypeScript
+- **UI**: shadcn/ui + Tailwind CSS v4
+- **Database**: PostgreSQL via Neon
+- **ORM**: Prisma
+- **Auth**: NextAuth.js v5
+- **Payments**: Midtrans (Core API + Snap UI)
+- **PDF**: PDFKit
+- **Excel**: xlsx (SheetJS)
+- **Charts**: Recharts
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+
+- PostgreSQL (local or Neon cloud)
+- Midtrans account (sandbox for development)
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Update `.env` with your database URL and other configuration.
+
+4. Initialize the database:
+   ```bash
+   pnpm prisma migrate dev
+   ```
+
+5. Start the development server:
+   ```bash
+   pnpm dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000)
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── (auth)/           # Authentication pages (login, register)
+│   ├── (dashboard)/      # Protected dashboard pages
+│   │   ├── owner/        # Owner dashboard
+│   │   └── operator/     # Operator dashboard
+│   ├── api/              # API routes
+│   │   ├── auth/         # NextAuth + registration
+│   │   ├── subscription/ # Midtrans integration
+│   │   ├── owner/        # Owner API endpoints
+│   │   ├── operator/     # Operator API endpoints
+│   │   └── ...
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Landing page
+├── components/
+│   ├── layout/           # Layout components (sidebar, header)
+│   ├── providers/        # Context providers
+│   └── ui/               # shadcn/ui components
+├── lib/
+│   ├── auth.ts           # NextAuth configuration
+│   ├── prisma.ts         # Prisma client
+│   └── utils.ts          # Utility functions
+└── types/
+    └── next-auth.d.ts    # NextAuth type extensions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Database Schema
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The Prisma schema is located at `prisma/schema.prisma`. Key models:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `User` - Authentication
+- `Organization` - Multi-tenant organizations
+- `Member` - User-organization relationships with roles
+- `Operator` - Organization operators
+- `File` - Document files (STNK, SIM, etc.)
+- `Transaction` - Payment transactions
+- `Subscription` - Subscription plans
+- `ActivityLog` - Audit logging
 
-## Learn More
+## Authentication
 
-To learn more about Next.js, take a look at the following resources:
+NextAuth v5 is configured with:
+- Credentials provider (email/password)
+- JWT session strategy
+- Organization and role injection into session
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Multi-Tenancy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Shared schema with `organizationId` on tenant-scoped tables
+- Prisma middleware for query filtering
+- PostgreSQL Row-Level Security (RLS) as safety net
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm lint` - Run ESLint
+- `pnpm prisma generate` - Generate Prisma Client
+- `pnpm prisma migrate dev` - Run migrations
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment Variables
+
+See `.env.example` for required variables.
+
+## License
+
+Private - All rights reserved

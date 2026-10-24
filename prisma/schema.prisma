@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core Auth & Multi-Tenancy
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String    // bcrypt, never store plaintext
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  memberships   Member[]
+  activityLogs  ActivityLog[]
+}
+
+model Organization {
+  id              String    @id @default(cuid())
+  name            String    // Biro Jasa business name
+  slug            String    @unique // for subdomain or URL path
+  subscriptionId  String?   // Midtrans subscription ID
+  package         Package   @default(BASIC)
+  operatorLimit   Int       @default(1) // based on package
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  members         Member[]
+  operators       Operator[]
+  files           File[]
+  transactions    Transaction[]
+  subscriptions   Subscription[]
+  activityLogs    ActivityLog[]
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MemberRole   @default(OPERATOR)
+  createdAt      DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+enum MemberRole {
+  OWNER
+  OPERATOR
+}
+
+model Operator {
+  id             String    @id @default(cuid())
+  organizationId String
+  email          String    @unique
+  name           String
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  files          File[]
+  transactions   Transaction[]
+  activityLogs   ActivityLog[]
+
+  @@index([organizationId])
+}
+
+// Subscription & Billing
+model Subscription {
+  id                      String        @id @default(cuid())
+  organizationId          String
+  midtransSubscriptionId  String? // Midtrans subscription ID
+  package                 Package
+  operatorLimit           Int
+  status                  SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart      DateTime
+  currentPeriodEnd        DateTime
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  organization            Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+enum Package {
+  BASIC   // 1 operator
+  PRO     // 2-3 operators
+  CUSTOM  // flexible
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+// Core Business: Files & Transactions
+model File {
+  id              String    @id @default(cuid())
+  organizationId  String
+  operatorId      String
+  customerName    String
+  customerKtp     String    // encrypted
+  vehicleNumber   String
+  ownershipType   String
+  serviceType     ServiceType
+  status          FileStatus @default(DRAFT)
+  estimatedPrice  Float
+  dpAmount        Float     // ~50% of estimated price
+  finalPrice      Float?    // actual price after SAMAS
+  samasPayment    Float?    // payment to SAMAS
+  serviceFee      Float?    // platform service fee
+  revenue         Float?    // calculated: finalPrice - samasPayment - serviceFee
+  coverLetterPath String?   // S3/object storage URL or local path
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  operator        Operator     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+
+  @@index([organizationId, operatorId, status, createdAt])
+}
+
+enum ServiceType {
+  STNK
+  PLAT
+  MUTASI
+  SIM_A
+  SIM_B
+  SIM_C
+  // Extensible for future services
+}
+
+enum FileStatus {
+  DRAFT               // Initial input
+  DP_PAID             // DP received
+  ON_PROGRESS_SAMAS   // Submitted to SAMAS
+  COMPLETED_SAMAS     // Completed at SAMAS
+  PICKED_UP           // Customer picked up
+  CANCELED
+}
+
+model Transaction {
+  id              String    @id @default(cuid())
+  organizationId  String
+  operatorId      String
+  fileId          String?
+  type            TransactionType
+  amount          Float
+  paymentMethod   String?   // cash, transfer, midtrans
+  midtransOrderId String?   // for gateway reconciliation
+  status          TransactionStatus @default(PENDING)
+  notes           String?
+  createdAt       DateTime  @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  operator        Operator     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  file            File?        @relation(fields: [fileId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, operatorId, createdAt])
+}
+
+enum TransactionType {
+  CUSTOMER_PAYMENT  // payment from customer
+  SAMAS_PAYMENT    // payment to SAMAS
+  SERVICE_FEE      // platform fee
+  REFUND
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// Audit & Security
+model ActivityLog {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String?   // who performed the action
+  operatorId     String?   // if action performed by operator
+  action         String    // e.g., "FILE_CREATED", "STATUS_UPDATED", "PAYMENT_RECORDED"
+  resourceType   String    // e.g., "File", "Transaction", "Operator"
+  resourceId     String    // ID of the affected resource
+  metadata       String?   // JSON: before/after values
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  operator       Operator?    @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, resourceType, resourceId, createdAt])
+}
