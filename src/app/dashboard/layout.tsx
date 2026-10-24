@@ -5,6 +5,7 @@ import { DashboardSidebar } from "@/components/layout/sidebar";
 
 export const instant = false;
 
+/** Renders the shell for signed-in users. Access control is enforced per page via requireRole(). */
 export default async function DashboardLayout({
   children,
 }: {

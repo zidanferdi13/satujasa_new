@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { MemberRole } from "@prisma/client"
+import { normalizeEmail } from "@/lib/validations"
 
 export const { handlers, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -21,7 +22,7 @@ export const { handlers, auth } = NextAuth({
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: normalizeEmail(credentials.email as string) },
           include: {
             memberships: {
               include: {
@@ -60,8 +61,9 @@ export const { handlers, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.organizationId = (user as any).organizationId;
-        token.role = (user as any).role;
+        const signedInUser = user as { organizationId?: string | null; role?: MemberRole };
+        token.organizationId = signedInUser.organizationId ?? null;
+        token.role = signedInUser.role ?? MemberRole.OPERATOR;
       }
       return token;
     },

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { MemberRole } from "@prisma/client";
 import {
@@ -57,15 +58,15 @@ export function DashboardSidebar({ role }: { role: MemberRole }) {
         })}
       </nav>
       <div className="absolute bottom-4 px-4">
-        <form action="/api/auth/signout" method="POST">
-          <button
-            type="submit"
-            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md w-full"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </button>
-        </form>
+        {/* BUG-01: signOut() fetches the CSRF token and clears the session cookie. */}
+        <button
+          type="button"
+          onClick={() => signOut({ redirectTo: "/login" })}
+          className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md w-full"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </aside>
   );
