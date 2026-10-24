@@ -5,7 +5,7 @@ export const DASHBOARD_HOME: Record<MemberRole, string> = {
   [MemberRole.OPERATOR]: "/dashboard/operator",
 };
 
-/** Dashboard a role lands on. Unknown/missing role gets the least-privileged dashboard. */
-export function dashboardPathFor(role: MemberRole | null | undefined): string {
-  return role === MemberRole.OWNER ? DASHBOARD_HOME.OWNER : DASHBOARD_HOME.OPERATOR;
+/** Dashboard a resolved role lands on. No null/unknown input: callers check access first. */
+export function dashboardPathFor(role: MemberRole): string {
+  return DASHBOARD_HOME[role];
 }

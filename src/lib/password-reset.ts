@@ -3,6 +3,16 @@ import { createHash, randomBytes } from "crypto";
 /** Reset links expire after this long. */
 export const RESET_TOKEN_TTL_MINUTES = 60;
 
+/**
+ * One email per address per window. Protects the email provider's daily quota
+ * (Resend free tier: 100/day) from being drained by repeated requests.
+ */
+export const RESET_THROTTLE_SECONDS = 60;
+
+export function resetThrottleCutoff(now: Date = new Date()): Date {
+  return new Date(now.getTime() - RESET_THROTTLE_SECONDS * 1000);
+}
+
 /** 256 bits of entropy, URL-safe so it survives being pasted into an email. */
 export function generateResetToken(): string {
   return randomBytes(32).toString("base64url");

@@ -8,9 +8,13 @@ import {
   generateResetToken,
   hashResetToken,
   isResetTokenUsable,
+  resetThrottleCutoff,
   resetTokenExpiry,
 } from "./password-reset.ts";
 import { canAddOperator } from "./operator-quota.ts";
+import { accessFor } from "./access.ts";
+import { formatRupiah } from "./money.ts";
+import { PLANS } from "./plans.ts";
 
 test("slugify trims, lowercases, strips accents and junk", () => {
   assert.equal(slugify("  Biro Jasa Maju  "), "biro-jasa-maju");
@@ -45,4 +49,43 @@ test("operator limit blocks creation at operatorLimit", () => {
   assert.equal(canAddOperator(0, 1), true);
   assert.equal(canAddOperator(1, 1), false);
   assert.equal(canAddOperator(0, 0), false);
+});
+
+test("formatRupiah renders Indonesian thousands, whole rupiah only", () => {
+  assert.equal(formatRupiah(99000), "Rp 99.000");
+  assert.equal(formatRupiah(249000), "Rp 249.000");
+  assert.equal(formatRupiah(0), "Rp 0");
+  assert.equal(formatRupiah(1234567), "Rp 1.234.567");
+  assert.equal(formatRupiah(-5000), "-Rp 5.000");
+  assert.throws(() => formatRupiah(99000.5), TypeError);
+});
+
+test("plans match the PM-locked contract", () => {
+  assert.deepEqual(
+    Object.values(PLANS).map((p) => [p.id, p.priceMonthly, p.operatorLimit, p.checkout, p.featured]),
+    [
+      ["BASIC", 99000, 1, true, false],
+      ["PRO", 249000, 3, true, true],
+      ["CUSTOM", null, null, false, false],
+    ]
+  );
+});
+
+test("accessFor fails closed (BUG-07)", () => {
+  const org = "org1";
+  assert.equal(accessFor(null), null, "no membership: no access");
+  assert.equal(accessFor(undefined), null);
+  assert.deepEqual(accessFor({ organizationId: org, role: "OWNER" }), { organizationId: org, role: "OWNER" });
+  assert.deepEqual(
+    accessFor({ organizationId: org, role: "OPERATOR", operator: { isActive: true } }),
+    { organizationId: org, role: "OPERATOR" }
+  );
+  assert.equal(accessFor({ organizationId: org, role: "OPERATOR", operator: { isActive: false } }), null, "deactivated");
+  assert.equal(accessFor({ organizationId: org, role: "OPERATOR", operator: null }), null, "no staff profile");
+  assert.equal(accessFor({ organizationId: org, role: "ADMIN" }), null, "unknown role");
+});
+
+test("reset throttle window is 60 seconds back", () => {
+  const now = new Date("2026-10-25T00:01:00Z");
+  assert.equal(resetThrottleCutoff(now).toISOString(), "2026-10-25T00:00:00.000Z");
 });

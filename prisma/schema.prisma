@@ -100,8 +100,8 @@ model Subscription {
 }
 
 enum Package {
-  BASIC   // 1 operator
-  PRO     // 2-3 operators
+  BASIC   // 1 operator — limits and prices live in src/lib/plans.ts
+  PRO     // 3 operators (fixed)
   CUSTOM  // flexible
 }
 
@@ -123,12 +123,14 @@ model File {
   ownershipType   String
   serviceType     ServiceType
   status          FileStatus @default(DRAFT)
-  estimatedPrice  Float
-  dpAmount        Float     // ~50% of estimated price
-  finalPrice      Float?    // actual price after SAMAS
-  samasPayment    Float?    // payment to SAMAS
-  serviceFee      Float?    // platform service fee
-  revenue         Float?    // calculated: finalPrice - samasPayment - serviceFee
+  // Money is whole rupiah (Int), never Float: IDR has no sub-unit in practice
+  // and integers cannot drift. Int32 ceiling: Rp 2.147.483.647 per value.
+  estimatedPrice  Int       // whole rupiah
+  dpAmount        Int       // whole rupiah, ~50% of estimated price
+  finalPrice      Int?      // whole rupiah, actual price after SAMAS
+  samasPayment    Int?      // whole rupiah, payment to SAMAS
+  serviceFee      Int?      // whole rupiah, platform service fee
+  revenue         Int?      // whole rupiah: finalPrice - samasPayment - serviceFee
   coverLetterPath String?   // S3/object storage URL or local path
   notes           String?
   createdAt       DateTime  @default(now())
@@ -166,7 +168,7 @@ model Transaction {
   operatorId      String
   fileId          String?
   type            TransactionType
-  amount          Float
+  amount          Int       // whole rupiah
   paymentMethod   String?   // cash, transfer, midtrans
   midtransOrderId String?   // for gateway reconciliation
   status          TransactionStatus @default(PENDING)

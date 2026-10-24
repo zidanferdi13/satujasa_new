@@ -3,8 +3,9 @@ import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
-import { MemberRole } from "@prisma/client"
+import type { MemberRole } from "@prisma/client"
 import { normalizeEmail } from "@/lib/validations"
+import { currentAccess } from "@/lib/current-access"
 
 export const { handlers, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -23,13 +24,6 @@ export const { handlers, auth } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: normalizeEmail(credentials.email as string) },
-          include: {
-            memberships: {
-              include: {
-                organization: true,
-              },
-            },
-          },
         });
 
         if (!user) {
@@ -45,26 +39,26 @@ export const { handlers, auth } = NextAuth({
           return null;
         }
 
-        // Get the primary membership (first organization)
-        const membership = user.memberships[0];
+        // No organization, or a deactivated operator: refuse the login outright.
+        const access = await currentAccess(user.id);
+        if (!access) {
+          return null;
+        }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          organizationId: membership?.organizationId || null,
-          role: membership?.role || MemberRole.OPERATOR,
-        };
+        return { id: user.id, email: user.email, name: user.name, ...access };
       },
     }),
   ],
   callbacks: {
+    // Runs on every auth() call. Access is re-read from the database each time, so a
+    // removed or deactivated member is signed out on their next request, not at
+    // token expiry. Returning null ends the session.
     async jwt({ token, user }) {
-      if (user) {
-        const signedInUser = user as { organizationId?: string | null; role?: MemberRole };
-        token.organizationId = signedInUser.organizationId ?? null;
-        token.role = signedInUser.role ?? MemberRole.OPERATOR;
-      }
+      const userId = user?.id ?? token.sub;
+      const access = userId ? await currentAccess(userId) : null;
+      if (!access) return null;
+      token.organizationId = access.organizationId;
+      token.role = access.role;
       return token;
     },
     async session({ session, token }) {

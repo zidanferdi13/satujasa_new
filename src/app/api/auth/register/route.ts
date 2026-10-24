@@ -1,3 +1,4 @@
+import { PLANS } from "@/lib/plans";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -58,11 +59,11 @@ export async function POST(request: Request) {
                     name: organizationName,
                     slug,
                     package: Package.BASIC,
-                    operatorLimit: 1,
+                    operatorLimit: PLANS.BASIC.operatorLimit,
                     subscriptions: {
                       create: {
                         package: Package.BASIC,
-                        operatorLimit: 1,
+                        operatorLimit: PLANS.BASIC.operatorLimit,
                         status: "ACTIVE",
                         currentPeriodStart: new Date(),
                         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days

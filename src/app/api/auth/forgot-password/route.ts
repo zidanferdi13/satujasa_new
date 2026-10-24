@@ -6,6 +6,7 @@ import {
   buildResetUrl,
   generateResetToken,
   hashResetToken,
+  resetThrottleCutoff,
   resetTokenExpiry,
 } from "@/lib/password-reset";
 import { sendPasswordResetEmail } from "@/lib/email";
@@ -30,7 +31,16 @@ export async function POST(request: Request) {
     select: { id: true, email: true },
   });
 
-  if (user) {
+  // ponytail: two simultaneous requests can both pass this check (worst case two
+  // emails). Per-IP rate limiting with a proper store is M6.
+  const recentlySent =
+    user &&
+    (await prisma.passwordResetToken.count({
+      where: { userId: user.id, createdAt: { gt: resetThrottleCutoff() } },
+    })) > 0;
+
+  // Throttled requests get the same reply, so the throttle reveals nothing either.
+  if (user && !recentlySent) {
     const token = generateResetToken();
     await prisma.$transaction([
       // A new request supersedes any older unused link.
