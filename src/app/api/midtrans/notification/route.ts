@@ -76,6 +76,11 @@ export async function POST(request: Request) {
 
   const activated = await prisma.$transaction(async (tx) => {
     const now = new Date();
+    // Serialise activations for this organization, so two notifications that arrive
+    // together cannot both close "the previous" subscription and both create an ACTIVE one.
+    const [organization] = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "Organization" WHERE id = ${payment.organizationId} FOR UPDATE`;
+    if (!organization) return false;
     const claimed = await tx.subscriptionPayment.updateMany({
       where: { id: payment.id, status: { in: ["PENDING", "FAILED", "EXPIRED"] } },
       data: { status: "PAID", paidAt: now },
@@ -83,6 +88,12 @@ export async function POST(request: Request) {
     if (claimed.count === 0) return false; // replay: already activated
 
     const periodEnd = new Date(now.getTime() + BILLING_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+    // BUG-13: at most one ACTIVE subscription per organization. The previous one is
+    // closed in this same transaction, so no reader ever sees two (or zero mid-swap).
+    await tx.subscription.updateMany({
+      where: { organizationId: payment.organizationId, status: "ACTIVE" },
+      data: { status: "CANCELED", currentPeriodEnd: now },
+    });
     await tx.organization.update({
       where: { id: payment.organizationId },
       data: { package: payment.package, operatorLimit },
