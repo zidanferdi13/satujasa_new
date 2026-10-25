@@ -87,12 +87,23 @@ export async function POST(request: Request) {
     });
     if (claimed.count === 0) return false; // replay: already activated
 
-    const periodEnd = new Date(now.getTime() + BILLING_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+    // BUG-14 (A13): a same-plan renewal continues from the paid-for end date, so early
+    // payment never costs the customer days; an upgrade or a purchase after lapse starts now
+    // (unused days are not credited - that is the whole of "no proration").
+    const current = await tx.subscription.findFirst({
+      where: { organizationId: payment.organizationId, status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+    });
+    const renewing = current?.package === payment.package && current.currentPeriodEnd > now;
+    const periodStart = renewing ? current.currentPeriodEnd : now;
+    const periodEnd = new Date(periodStart.getTime() + BILLING_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+
     // BUG-13: at most one ACTIVE subscription per organization. The previous one is
     // closed in this same transaction, so no reader ever sees two (or zero mid-swap).
+    // A renewed row keeps its period end (access ran to the end of what was paid for).
     await tx.subscription.updateMany({
       where: { organizationId: payment.organizationId, status: "ACTIVE" },
-      data: { status: "CANCELED", currentPeriodEnd: now },
+      data: renewing ? { status: "CANCELED" } : { status: "CANCELED", currentPeriodEnd: now },
     });
     await tx.organization.update({
       where: { id: payment.organizationId },
@@ -105,7 +116,7 @@ export async function POST(request: Request) {
         package: payment.package,
         operatorLimit,
         status: "ACTIVE",
-        currentPeriodStart: now,
+        currentPeriodStart: periodStart,
         currentPeriodEnd: periodEnd,
       },
     });
