@@ -6,7 +6,7 @@ A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle d
 
 - **Frontend/Backend**: Next.js 16 App Router + TypeScript
 - **UI**: shadcn/ui + Tailwind CSS v4
-- **Database**: PostgreSQL via Neon
+- **Database**: PostgreSQL 17 (local cluster for development, client VPS in production)
 - **ORM**: Prisma
 - **Auth**: NextAuth.js v5
 - **Payments**: Midtrans (Core API + Snap UI)
@@ -19,8 +19,18 @@ A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle d
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL (local or Neon cloud)
+- PostgreSQL 17 (local cluster; `scripts/demo.sh` creates a throwaway one on port 5433)
 - Midtrans account (sandbox for development)
+
+### Demo environment
+
+```bash
+scripts/demo.sh                                   # recreate + seed the demo database
+scripts/demo.sh https://xyz.trycloudflare.com     # ...and print AUTH_URL/APP_URL for a tunnel
+```
+
+Demo logins: `owner@demo.test` / `operator@demo.test`, password from `DEMO_PASSWORD` (default `demo1234`).
+All personal data in the seed is invented (KTP `3200…`, plates ending `DEMO`).
 
 ### Installation
 

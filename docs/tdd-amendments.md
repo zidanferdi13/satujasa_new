@@ -103,3 +103,73 @@ Identity block: legal name, address, contact email; NPWP only if the client conf
 Claims must match the implementation — "encrypted at rest" is only true once the M6 encryption
 work ships, and deletion promises need `scripts/delete-org-data.ts` behind them.
 Data is personal data under UU 27/2022 (PDP); purpose, access scope and retention must be stated.
+
+## A12. No access without payment — CEO ruling (BUG-15)
+
+Registration creates the organization and the owner login only. **No Subscription, operator
+limit 0.** No plan is granted anywhere without a PAID payment.
+
+One state for every organization without an active subscription — never paid and lapsed are
+identical:
+
+- Owner can log in, sees the "subscribe to start" screen (Basic + Pro cards, WhatsApp for
+  Custom). Nothing else is usable.
+- Owner can view and export existing data. The data belongs to them; the privacy policy
+  promises retention, not deletion on lapse.
+- No new berkas. Operators cannot log in. No grace period in the MVP.
+
+"Active" means `status = ACTIVE AND currentPeriodEnd > now`, evaluated at read time. There is
+no scheduled job in the MVP, so a row that stayed `ACTIVE` past its end must still read as
+expired. Entitlement comes from the active subscription (or its absence), **never** from
+`Organization.package`, which defaults to `BASIC` on creation.
+
+Watch the schema default `operatorLimit @default(1)`: registration must write `0` explicitly.
+
+## A13. Subscription periods — CEO ruling (BUG-14)
+
+- **Same-plan renewal:** new period starts at `max(now, end of current period)`. Paid-for days
+  are never taken away.
+- **Upgrade (Basic → Pro):** starts `now`. The new operator limit applies immediately. Unused
+  Basic days are **not** credited — this is the whole of "no proration", and FAQ #4 already
+  says it. Checkout must say so in one plain Indonesian sentence before the pay button
+  (Designer's wording).
+- **Downgrade (Pro → Basic):** not offered while Pro is active. The customer lets Pro lapse,
+  then buys Basic, and the owner picks which operator stays active within the new limit.
+- `checkoutRefusal()` refuses any target plan lower than the currently active one.
+
+## A14. Access checks that follow from A12/A13
+
+- Only one `ACTIVE` subscription per organization (partial unique index, migration 4).
+- An org whose limit dropped below its active operators (e.g. Pro 3 → Basic 1) is over limit:
+  operators are blocked and the owner must deactivate down to the limit. Read-time check, no
+  data destruction.
+- **Demo gate:** the client must walk the real path — register, locked screen, sandbox payment,
+  active — before approving the demo. A pre-seeded paid account alone is not sufficient.
+
+## A15. Demo database, tunnel and off-box backups (Researcher ruling, PM-accepted)
+
+**Database.** Demo: local PostgreSQL 17.11 on the demo machine (localhost-only, port 5432),
+disposable — drop, `prisma migrate deploy`, reseed per run. Production: PostgreSQL **17** on the
+client VPS (install from the PGDG apt repository if the distro ships older). **Neon is dropped
+entirely** — no URL in `.env.example`, no code path, no "optional sandbox".
+
+**Tunnel (demo only).** Cloudflare Quick Tunnel: `cloudflared tunnel --url http://localhost:3000`.
+- The hostname changes on every restart. Start it once per demo window; on restart update the
+  Midtrans sandbox notification URL, `APP_URL` and `AUTH_URL`.
+- NextAuth v5 behind a tunnel: `AUTH_URL` must be the tunnel URL (or `AUTH_TRUST_HOST=true`),
+  otherwise login callbacks redirect to `localhost`.
+- Fake data only — a `trycloudflare.com` URL is public to anyone who has it.
+- Before the client's M9 demo, switch to a named Cloudflare tunnel on the client's domain.
+- Demo machine is aarch64 (Raspberry Pi, 3.7 GB RAM): use the `cloudflared` linux-arm64 build.
+  Load-time numbers from this machine count for the demo only; the 3-second target is measured
+  on the VPS (A9).
+
+**Off-box backup.** Nightly `pg_dump -Fc`, encrypted, copied off the VPS, 30-day retention.
+- Encryption: **public-key** (`gpg`). The VPS holds only the public key, so it can encrypt but
+  never decrypt. The private key lives off the VPS: the client keeps one copy, Jihann keeps one
+  sealed copy. Losing the VPS must not lose the key; compromising the VPS must not expose old dumps.
+- Destination: pending CEO confirmation (PM recommendation: the client's Google Drive via
+  `rclone`, dedicated folder; zero cost, 15 GB free, one-time consent by the client).
+- Before launch: one real restore of a downloaded dump onto a clean PostgreSQL 17, timed, logged.
+- The single box means app and database fail together. The off-box dump is the only copy that
+  survives the VPS; it is not optional.
