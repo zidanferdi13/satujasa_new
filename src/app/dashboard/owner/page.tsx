@@ -31,7 +31,8 @@ export default async function OwnerDashboardPage() {
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-medium">Total Operators</h3>
+            {/* Active seats only: a deactivated operator frees its seat (PM ruling). */}
+            <h3 className="text-lg font-medium">Active Operators</h3>
             <p className="text-3xl font-bold mt-2">
               {operatorCount} / {operatorLimit}
             </p>

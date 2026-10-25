@@ -35,7 +35,10 @@ export async function POST(request: Request) {
     });
     if (count !== 1) return false;
 
-    await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+    await tx.user.update({
+      where: { id: record.userId },
+      data: { passwordHash, passwordChangedAt: now },
+    });
     // Any other outstanding links for this user die with the password change.
     await tx.passwordResetToken.deleteMany({
       where: { userId: record.userId, usedAt: null },

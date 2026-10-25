@@ -46,6 +46,11 @@ export const createOperatorSchema = z.object({
   password: passwordField,
 });
 
+/** Operator removal is a hide, so the only state that can be set is active/inactive. */
+export const setOperatorActiveSchema = z.object({
+  isActive: z.boolean({ error: "isActive must be a boolean" }),
+});
+
 /** Same normalisation as registration so login lookups match stored emails. */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

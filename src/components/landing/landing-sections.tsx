@@ -106,6 +106,16 @@ function Footer() {
                 </a>
               </li>
             ))}
+            <li>
+              <a
+                href={FOOTER_COPY.contactLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {FOOTER_COPY.contactLink.label}
+              </a>
+            </li>
           </ul>
         </nav>
       </div>

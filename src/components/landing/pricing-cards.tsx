@@ -3,19 +3,21 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/money";
 import { PLAN_LIST } from "@/lib/plans";
-import { PRICING_COPY, planCtaLabel } from "@/lib/landing-copy";
+import { PRICING_COPY, planCtaHref, planCtaLabel } from "@/lib/landing-copy";
 
 /**
  * Pricing cards. Every price string comes from formatRupiah — the only money formatter
  * in the app — so the cards cannot disagree with the billing code or with each other.
- * The Custom card renders no rupiah amount, no "0", and (per CEO ruling) no button until
- * a WhatsApp destination exists.
+ * The Custom card renders no rupiah amount and no "0": its CTA is the "Hubungi Kami"
+ * button that opens WhatsApp, not a checkout.
  */
 export function PricingCards() {
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {PLAN_LIST.map((plan) => {
         const ctaLabel = planCtaLabel(plan.id);
+        const ctaHref = planCtaHref(plan.id);
+        const isExternal = ctaHref.startsWith("http");
         return (
           <div
             key={plan.id}
@@ -55,11 +57,20 @@ export function PricingCards() {
             </p>
 
             <div className="mt-6">
-              {ctaLabel ? (
-                <Link href="/register" className={buttonVariants({ className: "h-11 w-full" })}>
+              {isExternal ? (
+                <a
+                  href={ctaHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({ variant: "outline", className: "h-11 w-full" })}
+                >
+                  {ctaLabel}
+                </a>
+              ) : (
+                <Link href={ctaHref} className={buttonVariants({ className: "h-11 w-full" })}>
                   {ctaLabel}
                 </Link>
-              ) : null}
+              )}
             </div>
           </div>
         );

@@ -5,10 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createOperatorSchema } from "@/lib/validations";
 import { badRequest, readJson } from "@/lib/http";
-import { canAddOperator } from "@/lib/operator-quota";
-import { countSeatsUsed } from "@/lib/seats";
-
-class OperatorLimitReached extends Error {}
+import { claimSeat, OperatorLimitReached } from "@/lib/seats";
 
 /**
  * Owner creates an operator login (M1 minimal). The organization comes from the
@@ -36,16 +33,7 @@ export async function POST(request: Request) {
 
   try {
     const operator = await prisma.$transaction(async (tx) => {
-      // Row lock on the organization serialises concurrent creates, so two
-      // requests cannot both pass the limit check and overshoot operatorLimit.
-      const [organization] = await tx.$queryRaw<{ operatorLimit: number }[]>`
-        SELECT "operatorLimit" FROM "Organization" WHERE id = ${organizationId} FOR UPDATE`;
-      if (!organization) throw new Error("Organization not found");
-
-      const current = await countSeatsUsed(tx, organizationId);
-      if (!canAddOperator(current, organization.operatorLimit)) {
-        throw new OperatorLimitReached();
-      }
+      await claimSeat(tx, organizationId);
 
       const user = await tx.user.create({ data: { name, email, passwordHash } });
       const member = await tx.member.create({

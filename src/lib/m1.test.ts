@@ -16,12 +16,16 @@ import { accessFor } from "./access.ts";
 import { formatRupiah } from "./money.ts";
 import { PLANS } from "./plans.ts";
 import {
+  BRAND_COPY,
   CTA_COPY,
   FAQ_COPY,
   FEATURES_COPY,
   FOOTER_COPY,
   HERO_COPY,
+  NAV_COPY,
   PRICING_COPY,
+  WHATSAPP_URL,
+  planCtaHref,
   planCtaLabel,
 } from "./landing-copy.ts";
 
@@ -126,12 +130,44 @@ test("landing copy only ever mentions a trial to deny one", () => {
   assert.equal(/gratis|free trial|uji coba/i.test(offerSurface), false);
 });
 
-test("landing prices are formatted by formatRupiah, Custom has no button", () => {
+test("landing prices are formatted by formatRupiah only", () => {
   assert.match(HERO_COPY.microcopy, /^Mulai dari Rp 99\.000\/bulan\.$/);
   assert.equal(formatRupiah(PLANS.PRO.priceMonthly), "Rp 249.000");
-  assert.equal(planCtaLabel("CUSTOM"), null);
   assert.equal(planCtaLabel("BASIC"), "Pilih Basic");
   assert.equal(planCtaLabel("PRO"), "Pilih Pro");
+});
+
+test("Custom card and footer contact both go to the client's WhatsApp number", () => {
+  assert.equal(planCtaLabel("CUSTOM"), "Hubungi Kami");
+  assert.equal(planCtaHref("CUSTOM"), WHATSAPP_URL);
+  assert.equal(planCtaHref("BASIC"), "/register");
+  assert.equal(planCtaHref("PRO"), "/register");
+  assert.equal(FOOTER_COPY.contactLink.href, WHATSAPP_URL);
+  assert.ok(WHATSAPP_URL.startsWith("https://wa.me/6281319535441?text="));
+  assert.match(decodeURIComponent(WHATSAPP_URL), /paket Custom/);
+});
+
+test("no shipped copy says samas, and the wrong revenue line is gone", () => {
+  // CEO: the spelling is always SAMSAT. The old feature line stated the pre-ruling
+  // formula (service fee subtracted a second time), so the feature ships again only when
+  // Designer re-issues it; for now it is omitted entirely.
+  const surface = JSON.stringify({
+    NAV_COPY,
+    HERO_COPY,
+    FEATURES_COPY,
+    PRICING_COPY,
+    FAQ_COPY,
+    CTA_COPY,
+    FOOTER_COPY,
+    BRAND_COPY,
+  });
+  assert.equal(/samas(?!t)/i.test(surface), false, "old spelling is back in shipped copy");
+  assert.equal(/biaya layanan/i.test(surface), false, "old revenue wording is back");
+  assert.equal(FEATURES_COPY.items.length, 5);
+  assert.equal(
+    FEATURES_COPY.items.some((item) => /Laporan Keuangan Otomatis/.test(item.title)),
+    false,
+  );
 });
 
 test("footer only links to sections that exist", () => {

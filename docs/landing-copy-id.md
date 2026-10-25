@@ -4,6 +4,7 @@ Source: Designer handoff, approved by PM. **Do not paraphrase, shorten, or rewri
 Build verbatim. Any copy change requires Designer approval in Thread 3.
 
 Route: public `/` (separate from `/dashboard`).
+Terminology (CEO): always **SAMSAT**, never "samas". Printed document = **Surat Jalan**.
 Language: Bahasa Indonesia throughout.
 Sections: Navbar → Hero → Features (6) → Pricing (3) → FAQ (6) → CTA banner → Footer.
 Breakpoints: 0 / 768 / 1024 / 1280.
@@ -24,8 +25,8 @@ Section title: Semua yang Anda Butuhkan untuk Operasional
 
 1. Manajemen Operator — Tambah dan kelola operator sesuai kapasitas paket Anda. Setiap operator punya akses sendiri.
 2. Pelacakan Berkas — Pantau status setiap berkas dari masuk hingga selesai, lengkap dengan riwayat perubahannya.
-3. Laporan Keuangan Otomatis — Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi pembayaran samas dan biaya layanan.
-   ⚠ PENDING CEO RULING: the brief defines revenue as customer payment − SAMAS payment only; this line also subtracts biaya layanan. One of the two is wrong. Do not ship this feature line until the CEO rules.
+3. Laporan Keuangan Otomatis — ⚠ PENDING DESIGNER WORDING. Old line ("…dikurangi pembayaran samas dan biaya layanan.") is WRONG and must not ship.
+   CEO ruling (b): revenue = pembayaran pelanggan − biaya SAMSAT = biaya jasa. Required meaning: "Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, yaitu jasa Anda." Designer writes final wording; spelling is always SAMSAT.
 4. Pembayaran Online — Langganan dibayar lewat Midtrans. Paket aktif otomatis begitu pembayaran berhasil.
 5. Hak Akses Owner & Operator — Owner melihat seluruh data. Operator hanya melihat berkas yang ditugaskan kepadanya.
 6. Ekspor PDF & Excel — Unduh laporan harian, bulanan, atau rentang tanggal dalam format PDF dan Excel.
@@ -35,7 +36,7 @@ Source of truth for values: `src/lib/plans.ts`. Never hardcode a price in JSX.
 
 - BASIC: name "Basic", price "Rp 99.000", unit "/bulan", operator line "1 operator", button "Pilih Basic" (primary).
 - PRO: name "Pro", price "Rp 249.000", unit "/bulan", operator line "3 operator", badge "Paling Populer" (small Amber pill with **dark** text `#0F172A`), button "Pilih Pro" (primary). Card gets an Indigo border and a slight shadow.
-- CUSTOM: name "Custom", price text "Hubungi Kami" (H3 size, **no rupiah formatting**), operator line "Jumlah operator sesuai kebutuhan", button "Hubungi Kami" (outline). **CEO ruling: render NO button and NO link until the WhatsApp number exists.** Then: `https://wa.me/<number>?text=<prefilled Indonesian message>`.
+- CUSTOM: name "Custom", price text "Hubungi Kami" (H3 size, **no rupiah formatting**), operator line "Jumlah operator sesuai kebutuhan", button "Hubungi Kami" (outline) → `https://wa.me/6281319535441?text=<prefilled Indonesian message>` (URL-encoded, Indonesian, e.g. "Halo, saya ingin bertanya tentang paket Custom Biro Jasa."). WA number confirmed by client 2026-10-25. Same href for the footer "Hubungi Kami" link.
 - Caption under the cards: Harga dalam Rupiah. Ditagih bulanan.
 - Nothing about free trials, anywhere.
 
@@ -57,7 +58,13 @@ Source of truth for values: `src/lib/plans.ts`. Never hardcode a price in JSX.
   - Kontak / Hubungi Kami → added when the WhatsApp number arrives.
   - Kebijakan Privasi / Syarat & Ketentuan → added when CEO-drafted legal content exists; required before Midtrans production.
   - Tentang, Panduan → no content owner; dropped from MVP.
-- Business identity block (name, address, email, NPWP only if it exists) → added with the legal pages. Never render a blank NPWP field.
+- Business identity block:
+  - Zidan Ferdiansyah
+  - Pondok Ungu Permai Blok AL 8 No 9, Kel. Bahagia, Kec. Babelan, Kab. Bekasi
+  - zidanferdi13@gmail.com
+  - NPWP: **omitted** until the client confirms. Never render a blank NPWP field.
+  - Midtrans merchant is registered as **perorangan** (individual), so the legal name + address above are what must appear.
+  - PENDING CLIENT: approval to publish the home address publicly.
 - Bottom: © 2026 Biro Jasa. Hak cipta dilindungi.
 
 **No dead links.** Every footer link resolves to a real section or route, or it is removed from the footer for the MVP.

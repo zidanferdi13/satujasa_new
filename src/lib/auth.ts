@@ -53,10 +53,25 @@ export const { handlers, auth } = NextAuth({
     // Runs on every auth() call. Access is re-read from the database each time, so a
     // removed or deactivated member is signed out on their next request, not at
     // token expiry. Returning null ends the session.
+    //
+    // BUG-09: a session issued before the user's last password change is dead. `authAt`
+    // is stamped once, at sign-in, and never refreshed — unlike `iat`, which NextAuth
+    // rewrites on every re-encode and would therefore hide the reset.
     async jwt({ token, user }) {
       const userId = user?.id ?? token.sub;
-      const access = userId ? await currentAccess(userId) : null;
+      if (!userId) return null;
+      const access = await currentAccess(userId);
       if (!access) return null;
+
+      const authAt = user ? Date.now() : (token.authAt as number | undefined);
+      if (
+        access.passwordChangedAt &&
+        (!authAt || authAt < access.passwordChangedAt.getTime())
+      ) {
+        return null;
+      }
+
+      token.authAt = authAt;
       token.organizationId = access.organizationId;
       token.role = access.role;
       return token;

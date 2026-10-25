@@ -34,8 +34,12 @@ export function isResetTokenUsable(
   return token.usedAt === null && token.expiresAt.getTime() > now.getTime();
 }
 
-/** Builds the link a user clicks. Requires NEXT_PUBLIC_APP_URL (falls back to localhost for dev). */
-export function buildResetUrl(token: string, appUrl = process.env.NEXT_PUBLIC_APP_URL): string {
+/**
+ * Builds the link a user clicks. Reads the server-only APP_URL at request time (BUG-11):
+ * a NEXT_PUBLIC_ value is frozen into the build, so a VPS deploy built without the real
+ * domain would keep emailing localhost links. Falls back to localhost for local dev.
+ */
+export function buildResetUrl(token: string, appUrl = process.env.APP_URL): string {
   const base = (appUrl ?? "http://localhost:3000").replace(/\/+$/, "");
   return `${base}/reset-password?token=${encodeURIComponent(token)}`;
 }

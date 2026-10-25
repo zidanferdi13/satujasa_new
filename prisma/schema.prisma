@@ -15,6 +15,9 @@ model User {
   name          String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  // Set when the password changes. Sessions issued before this moment are rejected,
+  // so a stolen session does not survive a password reset (BUG-09).
+  passwordChangedAt DateTime?
 
   // Relations
   memberships   Member[]
@@ -39,6 +42,7 @@ model Organization {
   files           File[]
   transactions    Transaction[]
   subscriptions   Subscription[]
+  subscriptionPayments SubscriptionPayment[]
   activityLogs    ActivityLog[]
 }
 
@@ -73,7 +77,9 @@ model Operator {
   updatedAt      DateTime  @updatedAt
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  member         Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting the login must never delete the staff profile,
+  // because Files and Transactions point at that profile (BUG-12).
+  member         Member       @relation(fields: [memberId], references: [id], onDelete: Restrict)
   files          File[]
   transactions   Transaction[]
   activityLogs   ActivityLog[]
@@ -127,17 +133,20 @@ model File {
   // and integers cannot drift. Int32 ceiling: Rp 2.147.483.647 per value.
   estimatedPrice  Int       // whole rupiah
   dpAmount        Int       // whole rupiah, ~50% of estimated price
-  finalPrice      Int?      // whole rupiah, actual price after SAMAS
-  samasPayment    Int?      // whole rupiah, payment to SAMAS
-  serviceFee      Int?      // whole rupiah, platform service fee
-  revenue         Int?      // whole rupiah: finalPrice - samasPayment - serviceFee
+  finalPrice      Int?      // whole rupiah, total the customer pays
+  samsatPayment   Int?      // whole rupiah, paid on to SAMSAT
+  serviceFee      Int?      // whole rupiah, the biro's own fee — this IS the revenue
+  // whole rupiah: finalPrice - samsatPayment = serviceFee. Never subtract serviceFee:
+  // it is the revenue, not a cost (tdd-amendments.md A1).
+  revenue         Int?
   coverLetterPath String?   // S3/object storage URL or local path
   notes           String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  operator        Operator     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  // Restrict: deleting a staff profile must fail loudly rather than erase revenue history (BUG-12).
+  operator        Operator     @relation(fields: [operatorId], references: [id], onDelete: Restrict)
   transactions    Transaction[]
 
   @@index([organizationId, operatorId, status, createdAt])
@@ -156,8 +165,8 @@ enum ServiceType {
 enum FileStatus {
   DRAFT               // Initial input
   DP_PAID             // DP received
-  ON_PROGRESS_SAMAS   // Submitted to SAMAS
-  COMPLETED_SAMAS     // Completed at SAMAS
+  ON_PROGRESS_SAMSAT  // Submitted to SAMSAT
+  COMPLETED_SAMSAT    // Completed at SAMSAT
   PICKED_UP           // Customer picked up
   CANCELED
 }
@@ -176,7 +185,8 @@ model Transaction {
   createdAt       DateTime  @default(now())
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  operator        Operator     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  // Restrict: revenue history outlives the person who recorded it (BUG-12).
+  operator        Operator     @relation(fields: [operatorId], references: [id], onDelete: Restrict)
   file            File?        @relation(fields: [fileId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, operatorId, createdAt])
@@ -184,7 +194,7 @@ model Transaction {
 
 enum TransactionType {
   CUSTOMER_PAYMENT  // payment from customer
-  SAMAS_PAYMENT    // payment to SAMAS
+  SAMSAT_PAYMENT   // payment to SAMSAT
   SERVICE_FEE      // platform fee
   REFUND
   ADJUSTMENT
@@ -195,6 +205,39 @@ enum TransactionStatus {
   PAID
   FAILED
   REFUNDED
+}
+
+// Subscription billing
+// One row per Midtrans payment attempt. orderId is unique and is the idempotency key:
+// Midtrans redelivers notifications, and a second delivery must not activate twice.
+model SubscriptionPayment {
+  id             String        @id @default(cuid())
+  organizationId String
+  orderId        String        @unique
+  amount         Int           // whole rupiah
+  package        Package
+  kind           PaymentKind
+  status         PaymentStatus @default(PENDING)
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+}
+
+enum PaymentKind {
+  PURCHASE  // first activation of a plan
+  UPGRADE   // Basic -> Pro, billed as a new payment, never prorated
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED  // refunds are issued manually in the Midtrans dashboard
 }
 
 // Audit & Security
