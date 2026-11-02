@@ -1,8 +1,7 @@
-import { PLANS } from "@/lib/plans";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { MemberRole, Package, Prisma } from "@prisma/client";
+import { MemberRole, Prisma } from "@prisma/client";
 import { registerSchema } from "@/lib/validations";
 import { nextAvailableSlug, slugify } from "@/lib/slug";
 
@@ -58,17 +57,9 @@ export async function POST(request: Request) {
                   create: {
                     name: organizationName,
                     slug,
-                    package: Package.BASIC,
-                    operatorLimit: PLANS.BASIC.operatorLimit,
-                    subscriptions: {
-                      create: {
-                        package: Package.BASIC,
-                        operatorLimit: PLANS.BASIC.operatorLimit,
-                        status: "ACTIVE",
-                        currentPeriodStart: new Date(),
-                        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-                      },
-                    },
+                    // BUG-15/A12: no Subscription and no seats until a PAID payment exists.
+                    // operatorLimit is written explicitly because the schema default is 1.
+                    operatorLimit: 0,
                   },
                 },
               },

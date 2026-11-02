@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { createOperatorSchema } from "@/lib/validations";
 import { badRequest, readJson } from "@/lib/http";
 import { claimSeat, OperatorLimitReached } from "@/lib/seats";
+import { organizationIsEntitled } from "@/lib/org-status";
+import { UI } from "@/lib/ui-strings";
 
 /**
  * Owner creates an operator login (M1 minimal). The organization comes from the
@@ -19,7 +21,8 @@ export async function POST(request: Request) {
     return badRequest("Only an organization owner can add operators", 403);
   }
   const organizationId = session.user.organizationId;
-
+  // A12: no new operator without a paid, unexpired subscription (a lapsed org keeps its old limit).
+  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.lock.title, 403);
   const parsed = await readJson(request);
   if (!parsed.ok) return badRequest("Request body must be valid JSON");
 

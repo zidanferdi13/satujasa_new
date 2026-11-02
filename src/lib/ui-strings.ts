@@ -1,0 +1,257 @@
+/**
+ * Indonesian UI copy. Source: docs/ui-strings-id.md (Designer), plus the two display rules A16
+ * states verbatim (`own.seatsCustom`, `notFound`). Keys mirror the doc. Build verbatim; changes
+ * need Designer approval through the PM. ui-strings.test.ts fails if any string here is not
+ * found word for word in those docs. Money always goes through formatRupiah().
+ */
+export const UI = {
+  meta: {
+    title: "Biro Jasa — Platform Manajemen Biro Jasa",
+    description: "Kelola operator, berkas, dan laporan keuangan biro jasa Anda dalam satu dashboard.",
+  },
+
+  common: {
+    genericError: "Terjadi kesalahan. Silakan coba lagi.",
+    badJson: "Permintaan tidak valid.",
+    invalidInput: "Data yang dikirim tidak valid.",
+    internal: "Terjadi kesalahan di server. Silakan coba lagi.",
+    notSignedIn: "Silakan masuk terlebih dahulu.",
+  },
+
+  v: {
+    emailRequired: "Email wajib diisi.",
+    emailInvalid: "Format email tidak valid.",
+    passwordRequired: "Password wajib diisi.",
+    passwordMin: "Password minimal 8 karakter.",
+    passwordBlank: "Password tidak boleh hanya spasi.",
+    nameRequired: "Nama wajib diisi.",
+    orgRequired: "Nama organisasi wajib diisi.",
+    tokenRequired: "Tautan reset tidak valid.",
+    passwordMismatch: "Konfirmasi password tidak cocok.",
+    emailTaken: "Email sudah terdaftar.",
+  },
+
+  login: {
+    title: "Masuk",
+    desc: "Masuk ke akun Anda.",
+    email: "Email",
+    password: "Password",
+    submit: "Masuk",
+    submitting: "Memproses…",
+    invalid: "Email atau password salah.",
+    forgot: "Lupa password?",
+    noAccount: "Belum punya akun?",
+    noAccountLink: "Daftar",
+    resetDone: "Password berhasil diubah. Silakan masuk.",
+  },
+
+  reg: {
+    title: "Buat Akun",
+    desc: "Daftar untuk mulai mengelola biro jasa Anda.",
+    name: "Nama Lengkap",
+    email: "Email",
+    password: "Password",
+    passwordHelp: "Minimal 8 karakter.",
+    org: "Nama Biro Jasa",
+    orgHelp: "Nama usaha yang akan tampil di dashboard dan dokumen.",
+    submit: "Buat Akun",
+    submitting: "Membuat akun…",
+    failed: "Pendaftaran gagal. Silakan coba lagi.",
+    success: "Akun berhasil dibuat.",
+    slugRetry: "Gagal membuat akun. Silakan coba lagi.",
+    haveAccount: "Sudah punya akun?",
+    haveAccountLink: "Masuk",
+  },
+
+  fp: {
+    title: "Lupa Password",
+    desc: "Masukkan email Anda. Kami akan mengirim tautan untuk mengatur ulang password.",
+    submit: "Kirim Tautan",
+    submitting: "Mengirim…",
+    sent: "Jika email terdaftar, tautan reset telah dikirim.",
+    back: "Kembali ke Masuk",
+  },
+
+  rp: {
+    title: "Atur Ulang Password",
+    desc: "Buat password baru minimal 8 karakter.",
+    new: "Password Baru",
+    confirm: "Konfirmasi Password",
+    submit: "Simpan Password",
+    submitting: "Menyimpan…",
+    done: "Password berhasil diubah. Silakan masuk.",
+    invalidTitle: "Tautan tidak valid atau sudah kedaluwarsa",
+    invalidDesc:
+      "Tautan reset hanya bisa dipakai sekali dan berlaku 60 menit. Minta tautan baru dan gunakan email yang paling baru.",
+    invalidCta: "Minta Tautan Baru",
+    invalidBack: "Kembali ke Masuk",
+    invalidApi: "Tautan tidak valid atau sudah kedaluwarsa.",
+  },
+
+  lock: {
+    title: "Langganan Anda belum aktif",
+    body: "Pilih paket untuk mulai mencatat berkas dan mengelola operator. Data Anda tetap tersimpan dan bisa diekspor.",
+    operatorNote: "Operator tidak bisa login sampai langganan aktif.",
+    export: "Ekspor Data",
+  },
+
+  op: {
+    blocked: "Akses ditutup karena langganan organisasi belum aktif. Hubungi owner Anda.",
+  },
+
+  co: {
+    upgradeNote:
+      "Upgrade mulai berlaku hari ini dan batas operator langsung bertambah. Sisa hari paket Basic tidak dihitung prorata.",
+    renewNote: "Perpanjangan dimulai setelah periode aktif Anda berakhir, jadi tidak ada hari yang hilang.",
+    downgradeRefused:
+      "Paket tidak bisa diturunkan selama Pro masih aktif. Pilih Basic setelah periode Pro berakhir.",
+    pay: (amount: string) => `Bayar ${amount}`,
+    pending: "Menunggu konfirmasi pembayaran…",
+    success: (plan: string, date: string) => `Pembayaran berhasil. Paket ${plan} aktif sampai ${date}.`,
+    failed: "Pembayaran gagal atau dibatalkan. Silakan coba lagi.",
+  },
+
+  nav: {
+    ownerSubtitle: "Dashboard Owner",
+    operatorSubtitle: "Dashboard Operator",
+    dashboard: "Beranda",
+    operators: "Operator",
+    files: "Berkas",
+    logout: "Keluar",
+  },
+
+  own: {
+    title: "Beranda",
+    welcome: (name: string) => `Selamat datang, ${name}`,
+    org: (org: string) => `Biro jasa: ${org}`,
+    plan: (plan: string, date: string) => `Paket ${plan} · aktif sampai ${date}`,
+    seats: "Slot Operator",
+    seatsValue: (n: string, limit: string) => `${n} / ${limit} terpakai`,
+    seatsCustom: "Sesuai kesepakatan", // A16: null operator limit; hide counter and over-limit alert
+    revenue: "Pendapatan Bulan Ini",
+    revenueHelp:
+      "Pembayaran pelanggan dikurangi biaya SAMSAT. Hanya berkas yang sudah diambil bulan ini yang dihitung.",
+    activeFiles: "Berkas Diproses",
+  },
+
+  addop: {
+    title: "Tambah Operator",
+    counter: (used: string, limit: string) => `Slot operator: ${used} / ${limit}`,
+    name: "Nama",
+    email: "Email",
+    password: "Password Awal",
+    passwordHelp: "Minimal 8 karakter. Bagikan ke operator; mereka bisa menggantinya nanti.",
+    submit: "Tambah Operator",
+    submitting: "Menyimpan…",
+    success: (name: string, email: string) =>
+      `${name} sudah bisa masuk dengan ${email}. Berikan password yang baru Anda buat.`,
+    failed: "Operator gagal ditambahkan.",
+    limit: (used: string, limit: string) =>
+      `Slot operator paket Anda sudah penuh (${used}/${limit}). Upgrade paket atau nonaktifkan operator lain.`,
+    limitApi: "Slot operator paket Anda sudah penuh.",
+    ownerOnly: "Hanya owner yang bisa menambah operator.",
+    ownerOnlyEdit: "Hanya owner yang bisa mengubah operator.",
+    notFound: "Operator tidak ditemukan.",
+    overLimit: (n: string, limit: string) =>
+      `Jumlah operator aktif melebihi paket Anda (${n}/${limit}). Nonaktifkan operator sampai sesuai batas.`,
+  },
+
+  opd: {
+    title: "Beranda",
+    welcome: (name: string) => `Selamat datang, ${name}`,
+    myFiles: "Berkas Saya",
+    pending: "Sedang Diproses",
+    completed: "Selesai",
+  },
+
+  status: {
+    DRAFT: "Draf",
+    DP_PAID: "DP Diterima",
+    ON_PROGRESS_SAMSAT: "Diproses di SAMSAT",
+    COMPLETED_SAMSAT: "Selesai di SAMSAT",
+    PICKED_UP: "Sudah Diambil",
+    CANCELED: "Dibatalkan",
+  },
+
+  service: {
+    STNK: "STNK",
+    PLAT: "Ganti Plat",
+    MUTASI: "Mutasi",
+    SIM_A: "SIM A",
+    SIM_B: "SIM B",
+    SIM_C: "SIM C",
+  },
+
+  ownership: {
+    PERORANGAN: "Perorangan",
+    BADAN_USAHA: "Badan Usaha",
+  },
+
+  empty: {
+    myFilesTitle: "Belum ada berkas",
+    myFilesBody: "Berkas yang Anda input akan muncul di sini.",
+    myFilesAction: "Input Berkas",
+    ownerFilesTitle: "Belum ada berkas",
+    ownerFilesBody: "Berkas yang diinput operator akan muncul di sini.",
+  },
+
+  file: {
+    sectionCustomer: "Data Pelanggan",
+    sectionMoney: "Biaya",
+    customerName: "Nama Pelanggan",
+    customerNameError: "Nama pelanggan wajib diisi.",
+    customerKtp: "NIK KTP",
+    customerKtpHelp: "16 angka, sesuai KTP.",
+    customerKtpError: "NIK harus 16 angka.",
+    vehicleNumber: "Nomor Kendaraan",
+    vehicleNumberHelp: "Contoh: B 1234 XYZ.",
+    vehicleNumberError: "Nomor kendaraan wajib diisi.",
+    ownershipType: "Jenis Kepemilikan",
+    serviceType: "Jenis Layanan",
+    notes: "Catatan",
+    notesPlaceholder: "Opsional",
+    estimatedPrice: "Estimasi Biaya",
+    estimatedPriceHelp: "Angka saja, tanpa titik. Contoh: 1500000",
+    dpAmount: "DP Diterima",
+    dpAmountHelp: "Biasanya 50% dari estimasi. Isi 0 jika belum ada DP.",
+    finalPrice: "Total Dibayar Pelanggan",
+    finalPriceHelp: "Diisi saat berkas selesai.",
+    samsatPayment: "Biaya SAMSAT",
+    samsatPaymentHelp: "Biaya yang dibayarkan ke SAMSAT.",
+    serviceFee: "Jasa Anda",
+    moneyError: "Masukkan angka tanpa titik atau koma.",
+    status: "Status",
+    pickedUpAt: "Diambil pada",
+    createdAt: "Diinput pada",
+    submit: "Simpan Berkas",
+    update: "Simpan Perubahan",
+    submitting: "Menyimpan…",
+    cancel: "Batal",
+    saved: "Berkas berhasil disimpan.",
+    updated: "Perubahan berkas disimpan.",
+    failed: "Berkas gagal disimpan. Silakan coba lagi.",
+    confirmLeave: "Isian belum disimpan. Yakin ingin meninggalkan halaman ini?",
+    statusChanged: (status: string) => `Status berkas diubah menjadi ${status}.`,
+    pickupGuard: "Total dibayar pelanggan harus diisi dan tidak boleh lebih kecil dari biaya SAMSAT.",
+    terminalNote: "Berkas yang sudah diambil atau dibatalkan tidak bisa diubah statusnya lagi.",
+    cancelStatus: "Batalkan berkas",
+    cancelConfirm:
+      "Batalkan berkas ini? Berkas yang dibatalkan tidak dihitung dalam pendapatan dan tidak bisa dikembalikan ke status sebelumnya.",
+    cancelConfirmYes: "Ya, Batalkan",
+    cancelConfirmNo: "Tidak",
+    cancelled: "Berkas dibatalkan.",
+  },
+
+  th: {
+    customer: "Pelanggan",
+    vehicle: "Kendaraan",
+    service: "Layanan",
+    status: "Status",
+    revenue: "Jasa",
+    operator: "Operator",
+    date: "Tanggal",
+    edit: "Ubah", // th.actions: single icon button, aria-label only. No delete (§12c).
+  },
+
+  notFound: "Halaman belum tersedia", // A16
+} as const;

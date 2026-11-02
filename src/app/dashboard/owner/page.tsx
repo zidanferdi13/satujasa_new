@@ -4,11 +4,27 @@ import { prisma } from "@/lib/prisma";
 import { canAddOperator } from "@/lib/operator-quota";
 import { countSeatsUsed } from "@/lib/seats";
 import OperatorForm from "./operator-form";
+import { organizationIsEntitled } from "@/lib/org-status";
+import { PricingCards } from "@/components/landing/pricing-cards";
+import { UI } from "@/lib/ui-strings";
 
 export default async function OwnerDashboardPage() {
   // RBAC gate must live in the page: layouts render in parallel and cannot stop page output.
   const session = await requireRole(MemberRole.OWNER);
   const organizationId = session.user.organizationId;
+
+  // A12: never-paid and lapsed orgs get the same locked screen; nothing else is usable.
+  // ponytail: cards link to /register until checkout lands (blocked on Midtrans keys).
+  if (!organizationId || !(await organizationIsEntitled(organizationId))) {
+    return (
+      <div className="max-w-5xl">
+        <h1 className="text-3xl font-bold mb-2">{UI.lock.title}</h1>
+        <p className="text-muted-foreground mb-1">{UI.lock.body}</p>
+        <p className="text-muted-foreground mb-8">{UI.lock.operatorNote}</p>
+        <PricingCards />
+      </div>
+    );
+  }
 
   const [organization, operatorCount] = organizationId
     ? await Promise.all([

@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import NextAuth, { CredentialsSignin } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
@@ -6,6 +6,15 @@ import bcrypt from "bcryptjs"
 import type { MemberRole } from "@prisma/client"
 import { normalizeEmail } from "@/lib/validations"
 import { currentAccess } from "@/lib/current-access"
+import { operatorAccessBlocked } from "@/lib/org-status"
+
+/**
+ * BUG-15: the credentials were correct, but the organization's subscription is not usable.
+ * The code travels to the login page, which shows op.blocked instead of "wrong password".
+ */
+class OperatorBlocked extends CredentialsSignin {
+  code = "operator_blocked";
+}
 
 export const { handlers, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -45,6 +54,11 @@ export const { handlers, auth } = NextAuth({
           return null;
         }
 
+        // BUG-15/A12: owners always get in (they see the locked screen); operators do not.
+        if (access.role === "OPERATOR" && (await operatorAccessBlocked(access.organizationId))) {
+          throw new OperatorBlocked();
+        }
+
         return { id: user.id, email: user.email, name: user.name, ...access };
       },
     }),
@@ -68,6 +82,11 @@ export const { handlers, auth } = NextAuth({
         access.passwordChangedAt &&
         (!authAt || authAt < access.passwordChangedAt.getTime())
       ) {
+        return null;
+      }
+
+      // BUG-15: a lapse mid-session ends the operator's session on their next request.
+      if (access.role === "OPERATOR" && (await operatorAccessBlocked(access.organizationId))) {
         return null;
       }
 

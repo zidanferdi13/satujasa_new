@@ -126,7 +126,7 @@ model File {
   customerName    String
   customerKtp     String    // encrypted
   vehicleNumber   String
-  ownershipType   String
+  ownershipType   OwnershipType
   serviceType     ServiceType
   status          FileStatus @default(DRAFT)
   // Money is whole rupiah (Int), never Float: IDR has no sub-unit in practice
@@ -139,6 +139,9 @@ model File {
   // whole rupiah: finalPrice - samsatPayment = serviceFee. Never subtract serviceFee:
   // it is the revenue, not a cost (tdd-amendments.md A1).
   revenue         Int?
+  // Set once, when status becomes PICKED_UP (A16/A17). Monthly revenue is summed over this
+  // field in Asia/Jakarta, so it must be a real timestamp, not derived from updatedAt.
+  pickedUpAt      DateTime?
   coverLetterPath String?   // S3/object storage URL or local path
   notes           String?
   createdAt       DateTime  @default(now())
@@ -150,6 +153,14 @@ model File {
   transactions    Transaction[]
 
   @@index([organizationId, operatorId, status, createdAt])
+}
+
+// What SAMSAT distinguishes for a vehicle's registration and rates (A17). A select, never
+// free text: spelling variants would split the revenue-per-operator report. Provisional on
+// the CEO; a new value is an additive ALTER TYPE ... ADD VALUE.
+enum OwnershipType {
+  PERORANGAN
+  BADAN_USAHA
 }
 
 enum ServiceType {
