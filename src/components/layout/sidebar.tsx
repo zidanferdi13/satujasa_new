@@ -5,37 +5,28 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { MemberRole } from "@prisma/client";
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  DollarSign,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { LayoutDashboard, LogOut } from "lucide-react";
+import { UI } from "@/lib/ui-strings";
 
-const ownerNavItems = [
-  { href: "/dashboard/owner", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/owner/operators", label: "Operators", icon: Users },
-  { href: "/dashboard/owner/revenue", label: "Revenue", icon: DollarSign },
-  { href: "/dashboard/owner/settings", label: "Settings", icon: Settings },
-];
-
+// A16: only routes that exist. Operators, Berkas, Pendapatan and Pengaturan return with the
+// milestone that builds their page (M3/M4), in the same commit as the route.
+const ownerNavItems = [{ href: "/dashboard/owner", label: UI.nav.dashboard, icon: LayoutDashboard }];
 const operatorNavItems = [
-  { href: "/dashboard/operator", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/operator/files", label: "Files", icon: FileText },
-  { href: "/dashboard/operator/transactions", label: "Transactions", icon: DollarSign },
+  { href: "/dashboard/operator", label: UI.nav.dashboard, icon: LayoutDashboard },
 ];
 
 export function DashboardSidebar({ role }: { role: MemberRole }) {
   const pathname = usePathname();
-  const navItems = role === MemberRole.OWNER ? ownerNavItems : operatorNavItems;
+  const isOwner = role === MemberRole.OWNER;
+  const navItems = isOwner ? ownerNavItems : operatorNavItems;
 
   return (
     <aside className="w-64 border-r bg-white">
       <div className="p-6">
-        <h1 className="text-xl font-bold">Biro Jasa</h1>
-        <p className="text-sm text-gray-500 capitalize">{role.toLowerCase()} Dashboard</p>
+        <p className="text-xl font-bold">Biro Jasa</p>
+        <p className="text-sm text-gray-500">
+          {isOwner ? UI.nav.ownerSubtitle : UI.nav.operatorSubtitle}
+        </p>
       </div>
       <nav className="px-4 space-y-1">
         {navItems.map((item) => {
@@ -44,6 +35,7 @@ export function DashboardSidebar({ role }: { role: MemberRole }) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isActive
@@ -51,7 +43,7 @@ export function DashboardSidebar({ role }: { role: MemberRole }) {
                   : "text-gray-600 hover:bg-gray-50"
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-4 w-4" aria-hidden="true" />
               {item.label}
             </Link>
           );
@@ -64,8 +56,8 @@ export function DashboardSidebar({ role }: { role: MemberRole }) {
           onClick={() => signOut({ redirectTo: "/login" })}
           className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md w-full"
         >
-          <LogOut className="h-4 w-4" />
-          Logout
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          {UI.nav.logout}
         </button>
       </div>
     </aside>

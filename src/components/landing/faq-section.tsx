@@ -9,8 +9,7 @@ export function FaqSection() {
   return (
     <section id="faq" className="scroll-mt-20 border-t bg-muted/60">
       <div className="mx-auto w-full max-w-3xl px-4 py-16 md:py-20">
-        {/* No approved FAQ heading exists; "FAQ" is the locked footer label. Visible heading is a Designer item. */}
-        <h2 className="text-3xl font-bold tracking-tight">FAQ</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{FAQ_COPY.heading}</h2>
         <div className="mt-8">
           {FAQ_COPY.items.map((item) => (
             <details key={item.question} className="group border-b border-border py-4">

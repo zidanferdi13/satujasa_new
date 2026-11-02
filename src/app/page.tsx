@@ -31,6 +31,9 @@ export default function Home() {
             <p className="mt-8 text-center text-sm text-muted-foreground">
               {PRICING_COPY.caption}
             </p>
+            <p className="mt-1 text-center text-sm text-muted-foreground">
+              {PRICING_COPY.seatNote}
+            </p>
           </div>
         </section>
 

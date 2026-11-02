@@ -13,6 +13,27 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+/**
+ * A19: the seed is a second door onto the same demo database, so it enforces the password rule
+ * itself. `scripts/demo.sh` refuses a tunnel without DEMO_PASSWORD, but `pnpm prisma db seed`
+ * (or this file directly) bypasses that script. Unset APP_URL means local use, which is fine;
+ * anything that parses to a non-loopback host is not.
+ */
+function isLoopbackAppUrl(raw: string | undefined): boolean {
+  if (!raw) return true;
+  try {
+    const host = new URL(raw).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return false; // unparseable is not evidence of "local"
+  }
+}
+
+if (!process.env.DEMO_PASSWORD && !isLoopbackAppUrl(process.env.APP_URL)) {
+  console.error("DEMO_PASSWORD must be set when APP_URL is not localhost.");
+  process.exit(1);
+}
+
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo1234";
 
 const OWNER = { email: "owner@demo.test", name: "Owner Demo" };
@@ -80,8 +101,12 @@ async function main() {
   });
   if (existingActive === 0) {
     // A12: no plan without a PAID payment, so the seeded subscription has one behind it.
-    await prisma.subscriptionPayment.create({
-      data: {
+    // A18: the subscription points back at that payment, so "which payment bought this?" is
+    // answerable for the seeded org too — upsert, because a re-run must not throw on orderId.
+    const seedPayment = await prisma.subscriptionPayment.upsert({
+      where: { orderId: "DEMO-SEED-1" },
+      update: {},
+      create: {
         organizationId: organization.id,
         orderId: "DEMO-SEED-1",
         amount: 99_000,
@@ -94,6 +119,7 @@ async function main() {
     await prisma.subscription.create({
       data: {
         organizationId: organization.id,
+        subscriptionPaymentId: seedPayment.id,
         package: "BASIC",
         operatorLimit: 1,
         status: "ACTIVE",

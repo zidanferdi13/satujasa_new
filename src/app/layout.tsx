@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { UI } from "@/lib/ui-strings";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Biro Jasa - Management Platform",
-  description: "Multi-tenant SaaS platform for Biro Jasa service bureaus",
+  title: UI.meta.title,
+  description: UI.meta.description,
 };
 
 export default function RootLayout({

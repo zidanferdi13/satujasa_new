@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { UI } from "@/lib/ui-strings";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,12 +34,12 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Registration failed");
+        setError(data.error || UI.reg.failed);
       } else {
         router.push("/login?registered=true");
       }
     } catch {
-      setError("An error occurred. Please try again.");
+      setError(UI.common.genericError);
     } finally {
       setLoading(false);
     }
@@ -46,19 +48,17 @@ export default function RegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Account</CardTitle>
-        <CardDescription>Start your free trial</CardDescription>
+        <CardTitle>{UI.reg.title}</CardTitle>
+        <CardDescription>{UI.reg.desc}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
-              {error}
-            </div>
+            <div className="p-3 text-sm text-destructive bg-destructive/5 rounded-md">{error}</div>
           )}
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
-              Full Name
+              {UI.reg.name}
             </label>
             <Input
               id="name"
@@ -70,7 +70,7 @@ export default function RegisterPage() {
           </div>
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              {UI.reg.email}
             </label>
             <Input
               id="email"
@@ -82,31 +82,45 @@ export default function RegisterPage() {
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
-              Password
+              {UI.reg.password}
             </label>
             <Input
               id="password"
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              aria-describedby="password-help"
               required
             />
+            <p id="password-help" className="text-xs text-muted-foreground">
+              {UI.reg.passwordHelp}
+            </p>
           </div>
           <div className="space-y-2">
             <label htmlFor="organizationName" className="text-sm font-medium">
-              Organization Name
+              {UI.reg.org}
             </label>
             <Input
               id="organizationName"
               type="text"
               value={formData.organizationName}
               onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
+              aria-describedby="org-help"
               required
             />
+            <p id="org-help" className="text-xs text-muted-foreground">
+              {UI.reg.orgHelp}
+            </p>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating account..." : "Create Account"}
+            {loading ? UI.reg.submitting : UI.reg.submit}
           </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            {UI.reg.haveAccount}{" "}
+            <Link href="/login" className="underline">
+              {UI.reg.haveAccountLink}
+            </Link>
+          </p>
         </form>
       </CardContent>
     </Card>

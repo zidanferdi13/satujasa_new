@@ -103,14 +103,11 @@ test("reset throttle window is 60 seconds back", () => {
   assert.equal(resetThrottleCutoff(now).toISOString(), "2026-10-25T00:00:00.000Z");
 });
 
-test("FAQ ships five items and never the pending seat question", () => {
-  // docs/landing-copy-id.md marks FAQ #3 PENDING: it is wrong until the Designer
-  // re-issues it under the CEO seat rule, so shipping it would ship a false claim.
-  assert.equal(FAQ_COPY.items.length, 5);
-  assert.equal(
-    FAQ_COPY.items.some((item) => /operator yang bisa saya tambahkan/i.test(item.question)),
-    false,
-  );
+test("FAQ ships all six items, seat question third", () => {
+  // Designer re-issued FAQ #3 under the CEO seat rule (ui-strings-id.md §13).
+  assert.equal(FAQ_COPY.items.length, 6);
+  assert.match(FAQ_COPY.items[2].question, /operator yang bisa saya tambahkan/i);
+  assert.match(FAQ_COPY.items[2].answer, /akun owner memakai satu slot/);
 });
 
 test("landing copy only ever mentions a trial to deny one", () => {
@@ -147,10 +144,9 @@ test("Custom card and footer contact both go to the client's WhatsApp number", (
   assert.match(decodeURIComponent(WHATSAPP_URL), /paket Custom/);
 });
 
-test("no shipped copy says samas, and the wrong revenue line is gone", () => {
-  // CEO: the spelling is always SAMSAT. The old feature line stated the pre-ruling
-  // formula (service fee subtracted a second time), so the feature ships again only when
-  // Designer re-issues it; for now it is omitted entirely.
+test("no shipped copy says samas, and revenue is never described as fee-subtracted", () => {
+  // CEO: the spelling is always SAMSAT, and revenue = customer payment − SAMSAT cost.
+  // The re-issued feature line must not subtract a service fee a second time.
   const surface = JSON.stringify({
     NAV_COPY,
     HERO_COPY,
@@ -163,11 +159,24 @@ test("no shipped copy says samas, and the wrong revenue line is gone", () => {
   });
   assert.equal(/samas(?!t)/i.test(surface), false, "old spelling is back in shipped copy");
   assert.equal(/biaya layanan/i.test(surface), false, "old revenue wording is back");
-  assert.equal(FEATURES_COPY.items.length, 5);
-  assert.equal(
-    FEATURES_COPY.items.some((item) => /Laporan Keuangan Otomatis/.test(item.title)),
-    false,
-  );
+  assert.equal(FEATURES_COPY.items.length, 6);
+  const report = FEATURES_COPY.items.find((item) => item.title === "Laporan Keuangan Otomatis");
+  assert.ok(report);
+  assert.match(report.body, /dikurangi biaya SAMSAT/);
+});
+
+test("landing copy is verbatim from the locked docs", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const docs =
+    (await readFile(new URL("../../docs/landing-copy-id.md", import.meta.url), "utf8")) +
+    (await readFile(new URL("../../docs/ui-strings-id.md", import.meta.url), "utf8"));
+  const strings = [
+    ...FEATURES_COPY.items.flatMap((i) => [i.title, i.body]),
+    ...FAQ_COPY.items.flatMap((i) => [i.question, i.answer]),
+    FAQ_COPY.heading,
+    PRICING_COPY.seatNote,
+  ];
+  for (const s of strings) assert.ok(docs.includes(s), `not in docs: ${s}`);
 });
 
 test("footer only links to sections that exist", () => {

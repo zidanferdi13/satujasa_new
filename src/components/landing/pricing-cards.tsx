@@ -10,14 +10,19 @@ import { PRICING_COPY, planCtaHref, planCtaLabel } from "@/lib/landing-copy";
  * in the app — so the cards cannot disagree with the billing code or with each other.
  * The Custom card renders no rupiah amount and no "0": its CTA is the "Hubungi Kami"
  * button that opens WhatsApp, not a checkout.
+ *
+ * `paidPlansHref` is where the Basic/Pro buttons point. A19: the signed-in locked screen
+ * passes `null` until /checkout exists, because a button that leads to a signup form is a
+ * dead end for someone who is already signed in. With `null` the paid cards render price and
+ * caption only; "Hubungi Kami" stays, since WhatsApp works for anyone.
  */
-export function PricingCards() {
+export function PricingCards({ paidPlansHref = "/register" }: { paidPlansHref?: string | null }) {
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {PLAN_LIST.map((plan) => {
         const ctaLabel = planCtaLabel(plan.id);
-        const ctaHref = planCtaHref(plan.id);
-        const isExternal = ctaHref.startsWith("http");
+        const href = plan.checkout ? paidPlansHref : planCtaHref(plan.id);
+        const isExternal = href !== null && href.startsWith("http");
         return (
           <div
             key={plan.id}
@@ -56,22 +61,24 @@ export function PricingCards() {
                 : PRICING_COPY.operatorLine(plan.operatorLimit)}
             </p>
 
-            <div className="mt-6">
-              {isExternal ? (
-                <a
-                  href={ctaHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={buttonVariants({ variant: "outline", className: "h-11 w-full" })}
-                >
-                  {ctaLabel}
-                </a>
-              ) : (
-                <Link href={ctaHref} className={buttonVariants({ className: "h-11 w-full" })}>
-                  {ctaLabel}
-                </Link>
-              )}
-            </div>
+            {href === null ? null : (
+              <div className="mt-6">
+                {isExternal ? (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonVariants({ variant: "outline", className: "h-11 w-full" })}
+                  >
+                    {ctaLabel}
+                  </a>
+                ) : (
+                  <Link href={href} className={buttonVariants({ className: "h-11 w-full" })}>
+                    {ctaLabel}
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         );
       })}

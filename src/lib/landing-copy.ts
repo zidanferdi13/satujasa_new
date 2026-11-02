@@ -5,14 +5,10 @@
  * Designer approval in Thread 3. Prices come from PLANS and are turned into text by
  * formatRupiah, so no rupiah amount is ever typed twice.
  *
- * Two items are deliberately absent, both PENDING Designer copy, both ordered by PM to be
- * omitted rather than shipped wrong:
- * - FAQ #3 ("Berapa operator yang bisa saya tambahkan?") — needs a re-issue under the CEO
- *   seat rule.
- * - Feature "Laporan Keuangan Otomatis" — its body line stated the old revenue formula
- *   (it subtracted the service fee too). Per the CEO ruling revenue = customer
- *   payment − SAMSAT cost = biaya jasa, and serviceFee is never subtracted. The feature
- *   returns with Designer's replacement wording.
+ * Two items were held back until Designer re-issued them (both now in, ui-strings-id.md §13):
+ * FAQ #3 ("Berapa operator yang bisa saya tambahkan?") under the CEO seat rule, and the
+ * "Laporan Keuangan Otomatis" feature, whose body line used to subtract the service fee a
+ * second time. Revenue = customer payment − SAMSAT cost = biaya jasa.
  */
 import { formatRupiah } from "./money.ts";
 import { PLANS, type PlanId } from "./plans.ts";
@@ -54,6 +50,10 @@ export const FEATURES_COPY = {
       body: "Pantau status setiap berkas dari masuk hingga selesai, lengkap dengan riwayat perubahannya.",
     },
     {
+      title: "Laporan Keuangan Otomatis",
+      body: "Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, dan sisanya adalah jasa Anda.",
+    },
+    {
       title: "Pembayaran Online",
       body: "Langganan dibayar lewat Midtrans. Paket aktif otomatis begitu pembayaran berhasil.",
     },
@@ -70,6 +70,8 @@ export const FEATURES_COPY = {
 
 export const PRICING_COPY = {
   caption: "Harga dalam Rupiah. Ditagih bulanan.",
+  /** ui-strings-id.md §13: sits under the caption, same style. */
+  seatNote: "Slot operator sudah termasuk akun owner jika Anda ikut mengerjakan berkas.",
   unit: "/bulan",
   featuredBadge: "Paling Populer",
   customPriceText: "Hubungi Kami",
@@ -97,8 +99,9 @@ export function planCtaHref(id: PlanId): string {
   return id === "CUSTOM" ? WHATSAPP_URL : "/register";
 }
 
-/** FAQ items 1, 2, 4, 5, 6 — see the file header for why 3 is missing. */
+/** FAQ items 1–6, in the locked order (ui-strings-id.md §13). */
 export const FAQ_COPY = {
+  heading: "Pertanyaan yang Sering Diajukan",
   items: [
     {
       question: "Berapa lama proses aktivasi setelah pembayaran?",
@@ -108,6 +111,11 @@ export const FAQ_COPY = {
     {
       question: "Apakah ada masa uji coba gratis?",
       answer: "Tidak. Paket langsung aktif setelah pembayaran pertama.",
+    },
+    {
+      question: "Berapa operator yang bisa saya tambahkan?",
+      answer:
+        "Basic mendukung 1 operator dan Pro 3 operator. Jika Anda ikut mengerjakan berkas, akun owner memakai satu slot. Butuh lebih banyak? Ajukan paket Custom lewat Hubungi Kami.",
     },
     {
       question: "Bisakah saya upgrade dari Basic ke Pro?",

@@ -246,3 +246,17 @@ English is allowed only in developer-facing messages that no user can reach (e.g
 - **Bug numbers are assigned by the PM only.** QA's "BUG-14 (Low)" from the 1867bd7 pass is
   **BUG-16**: re-activating an already-active operator returns 403 at the limit; must return 200
   with no seat claim. Fix with M3.
+
+## A19. Locked-screen CTAs and the seed password guard (PM, at fc94367)
+
+- **The locked screen must not link a signed-in owner to `/register`.** `/register` exists, so it
+  passes a literal dead-link check, but a logged-in owner clicking "Pilih Basic" lands on a signup
+  form — a dead end that reads as a bug to the client. Until `/checkout` exists: render the pricing
+  cards **without** the Basic/Pro buttons (price and caption only) and keep "Hubungi Kami" (the
+  WhatsApp link). Wire the buttons to `/checkout` in the same commit that adds it. No new copy
+  needed either way.
+- **The seed itself must refuse the default password, not only `demo.sh`.** `prisma/seed.ts:16`
+  still falls back to `demo1234` when `DEMO_PASSWORD` is unset, so `pnpm prisma db seed` against a
+  public `APP_URL` still creates a guessable login. Rule: seed exits 1 when `DEMO_PASSWORD` is
+  unset **and** `APP_URL` is set to anything that is not `localhost`/`127.0.0.1`. `demo.sh`'s
+  earlier check stays; it just is not the only one.

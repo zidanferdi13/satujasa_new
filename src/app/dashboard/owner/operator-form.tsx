@@ -4,9 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UI } from "@/lib/ui-strings";
 
 /** Minimal operator creation form for M1. Full list/edit/delete lives in M3. */
-export default function OperatorForm({ disabled }: { disabled: boolean }) {
+export default function OperatorForm({
+  disabled,
+  limitMessage,
+}: {
+  disabled: boolean;
+  limitMessage: string | null;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,18 +36,16 @@ export default function OperatorForm({ disabled }: { disabled: boolean }) {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error ?? "Could not create the operator");
+        setError(data.error ?? UI.addop.failed);
       } else {
-        setMessage(
-          `${data.operator.name} can now sign in with ${data.operator.email}. Give them the password you just set.`
-        );
+        setMessage(UI.addop.success(data.operator.name, data.operator.email));
         setName("");
         setEmail("");
         setPassword("");
         router.refresh();
       }
     } catch {
-      setError("An error occurred. Please try again.");
+      setError(UI.common.genericError);
     } finally {
       setLoading(false);
     }
@@ -48,11 +53,15 @@ export default function OperatorForm({ disabled }: { disabled: boolean }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      {error && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">{error}</div>}
-      {message && <div className="p-3 text-sm text-green-700 bg-green-50 rounded-md">{message}</div>}
+      {error && (
+        <div className="p-3 text-sm text-destructive bg-destructive/5 rounded-md">{error}</div>
+      )}
+      {message && (
+        <div className="p-3 text-sm text-green-700 bg-green-50 rounded-md">{message}</div>
+      )}
       <div className="space-y-2">
         <label htmlFor="operator-name" className="text-sm font-medium">
-          Name
+          {UI.addop.name}
         </label>
         <Input
           id="operator-name"
@@ -64,7 +73,7 @@ export default function OperatorForm({ disabled }: { disabled: boolean }) {
       </div>
       <div className="space-y-2">
         <label htmlFor="operator-email" className="text-sm font-medium">
-          Email
+          {UI.addop.email}
         </label>
         <Input
           id="operator-email"
@@ -77,7 +86,7 @@ export default function OperatorForm({ disabled }: { disabled: boolean }) {
       </div>
       <div className="space-y-2">
         <label htmlFor="operator-password" className="text-sm font-medium">
-          Initial password
+          {UI.addop.password}
         </label>
         <Input
           id="operator-password"
@@ -85,21 +94,21 @@ export default function OperatorForm({ disabled }: { disabled: boolean }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           disabled={disabled}
+          aria-describedby="operator-password-help"
           minLength={8}
           required
         />
-        <p className="text-xs text-gray-500">
-          At least 8 characters. Share it with the operator; they can change it later.
+        <p id="operator-password-help" className="text-xs text-muted-foreground">
+          {UI.addop.passwordHelp}
         </p>
       </div>
       <Button type="submit" disabled={loading || disabled}>
-        {loading ? "Creating..." : "Create operator"}
+        {loading ? UI.addop.submitting : UI.addop.submit}
       </Button>
-      {disabled && (
-        <p className="text-sm text-amber-700">
-          Your package has no operator seats left. Upgrade the package to add more.
-        </p>
-      )}
+      {/* A16: info styling, not destructive — the package is full, nothing failed. */}
+      {disabled && limitMessage ? (
+        <p className="p-3 text-sm rounded-md bg-muted text-foreground">{limitMessage}</p>
+      ) : null}
     </form>
   );
 }
