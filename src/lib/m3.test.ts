@@ -111,3 +111,35 @@ test("over-limit blocks operators; a null (Custom) limit never does", () => {
   assert.equal(operatorMaySignIn(future, 2, 1, now), false);
   assert.equal(operatorMaySignIn(null, 0, 1, now), false);
 });
+
+// Source-level guards for the M3 routes. Route handlers need a live session and database, so these
+// pin the rules that must not regress silently; QA covers the behaviour end to end.
+import { readFileSync } from "node:fs";
+const src = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+
+test("no file route exports a DELETE handler (A17, BUG-12)", () => {
+  for (const path of ["app/api/files/route.ts", "app/api/files/[fileId]/route.ts"]) {
+    assert.doesNotMatch(src(path), /export\s+async\s+function\s+DELETE/, path);
+  }
+});
+
+test("file lists mask the KTP and never render it raw (A17)", () => {
+  for (const path of ["app/dashboard/operator/files/page.tsx", "app/dashboard/owner/files/page.tsx"]) {
+    const page = src(path);
+    assert.match(page, /maskKtp\(file\.customerKtp\)/, path);
+    assert.doesNotMatch(page, /\{file\.customerKtp\}/, path);
+  }
+});
+
+test("file pages scope by the session's organizationId (tenant isolation)", () => {
+  assert.match(src("lib/file-queries.ts"), /where: \{ id: fileId, organizationId \}/);
+  assert.match(src("app/dashboard/operator/files/page.tsx"), /where: \{ organizationId, operatorId \}/);
+  assert.match(src("app/dashboard/owner/files/page.tsx"), /where: \{ organizationId \}/);
+});
+
+test("BUG-16: an operator already in the requested state claims no seat", () => {
+  const route = src("app/api/owner/operators/[operatorId]/route.ts");
+  const noop = route.indexOf("existing.isActive === isActive");
+  assert.ok(noop > 0, "no-op guard missing");
+  assert.ok(noop < route.indexOf("claimSeat(tx"), "guard must run before the seat claim");
+});

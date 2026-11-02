@@ -5,14 +5,18 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { MemberRole } from "@prisma/client";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { FolderOpen, LayoutDashboard, LogOut } from "lucide-react";
 import { UI } from "@/lib/ui-strings";
 
-// A16: only routes that exist. Operators, Berkas, Pendapatan and Pengaturan return with the
-// milestone that builds their page (M3/M4), in the same commit as the route.
-const ownerNavItems = [{ href: "/dashboard/owner", label: UI.nav.dashboard, icon: LayoutDashboard }];
+// A16: only routes that exist. Berkas opened in M3; Operators, Pendapatan and Pengaturan return
+// with the milestone that builds their page, in the same commit as the route.
+const ownerNavItems = [
+  { href: "/dashboard/owner", label: UI.nav.dashboard, icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/owner/files", label: UI.nav.files, icon: FolderOpen, exact: false },
+];
 const operatorNavItems = [
-  { href: "/dashboard/operator", label: UI.nav.dashboard, icon: LayoutDashboard },
+  { href: "/dashboard/operator", label: UI.nav.dashboard, icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/operator/files", label: UI.nav.files, icon: FolderOpen, exact: false },
 ];
 
 export function DashboardSidebar({ role }: { role: MemberRole }) {
@@ -30,15 +34,18 @@ export function DashboardSidebar({ role }: { role: MemberRole }) {
       </div>
       <nav className="px-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Beranda matches exactly; a section (Berkas) stays lit on its nested pages.
+          const active = item.exact
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
               href={item.href}
-              aria-current={isActive ? "page" : undefined}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                isActive
+                active
                   ? "bg-gray-100 text-gray-900"
                   : "text-gray-600 hover:bg-gray-50"
               )}

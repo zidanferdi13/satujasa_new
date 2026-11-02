@@ -16,9 +16,9 @@ import { UI } from "@/lib/ui-strings";
  */
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user) return badRequest("Not signed in", 401);
+  if (!session?.user) return badRequest(UI.common.notSignedIn, 401);
   if (session.user.role !== MemberRole.OWNER || !session.user.organizationId) {
-    return badRequest("Only an organization owner can add operators", 403);
+    return badRequest(UI.addop.ownerOnly, 403);
   }
   const organizationId = session.user.organizationId;
   // A12: no new operator without a paid, unexpired subscription (a lapsed org keeps its old limit).
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ operator }, { status: 201 });
   } catch (error) {
     if (error instanceof OperatorLimitReached) {
-      return badRequest("Operator limit reached for your package", 403);
+      return badRequest(UI.addop.limitApi, 403);
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return badRequest("User with this email already exists", 409);

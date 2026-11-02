@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { badRequest, readJson } from "@/lib/http";
 import { setOperatorActiveSchema } from "@/lib/validations";
 import { claimSeat, OperatorLimitReached } from "@/lib/seats";
+import { UI } from "@/lib/ui-strings";
 
 type Params = { params: Promise<{ operatorId: string }> };
 
@@ -18,20 +19,23 @@ type Params = { params: Promise<{ operatorId: string }> };
  *
  * Reactivation takes the organization row lock and the same seat check as creation.
  * Without that, deactivate-then-reactivate would be a free seat.
+ *
+ * BUG-16: setting an operator who is already active to isActive: true is a no-op, not a seat
+ * claim. Otherwise an owner at the limit gets 403 on a row that never changed state.
  */
 export async function PATCH(request: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user) return badRequest("Not signed in", 401);
+  if (!session?.user) return badRequest(UI.common.notSignedIn, 401);
   if (session.user.role !== MemberRole.OWNER || !session.user.organizationId) {
-    return badRequest("Only an organization owner can change operators", 403);
+    return badRequest(UI.addop.ownerOnlyEdit, 403);
   }
   const organizationId = session.user.organizationId;
 
   const parsed = await readJson(request);
-  if (!parsed.ok) return badRequest("Request body must be valid JSON");
+  if (!parsed.ok) return badRequest(UI.common.badJson);
   const validated = setOperatorActiveSchema.safeParse(parsed.body);
   if (!validated.success) {
-    return badRequest(validated.error.issues[0]?.message ?? "Invalid input");
+    return badRequest(validated.error.issues[0]?.message ?? UI.common.invalidInput);
   }
   const { isActive } = validated.data;
   const { operatorId } = await params;
@@ -40,9 +44,15 @@ export async function PATCH(request: Request, { params }: Params) {
   // organization rather than trusted.
   const existing = await prisma.operator.findFirst({
     where: { id: operatorId, organizationId },
-    select: { id: true },
+    select: { id: true, name: true, email: true, isActive: true },
   });
-  if (!existing) return badRequest("Operator not found", 404);
+  if (!existing) return badRequest(UI.addop.notFound, 404);
+
+  // BUG-16: already in the requested state — nothing to claim, nothing to write.
+  if (existing.isActive === isActive) {
+    const { id, name, email } = existing;
+    return NextResponse.json({ operator: { id, name, email, isActive } });
+  }
 
   try {
     const operator = await prisma.$transaction(async (tx) => {
@@ -56,10 +66,10 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ operator });
   } catch (error) {
     if (error instanceof OperatorLimitReached) {
-      return badRequest("Operator limit reached for your package", 403);
+      return badRequest(UI.addop.limitApi, 403);
     }
     console.error("Update operator error:", error);
-    return badRequest("Internal server error", 500);
+    return badRequest(UI.common.internal, 500);
   }
 }
 
@@ -70,9 +80,9 @@ export async function PATCH(request: Request, { params }: Params) {
  */
 export async function DELETE(_request: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user) return badRequest("Not signed in", 401);
+  if (!session?.user) return badRequest(UI.common.notSignedIn, 401);
   if (session.user.role !== MemberRole.OWNER || !session.user.organizationId) {
-    return badRequest("Only an organization owner can change operators", 403);
+    return badRequest(UI.addop.ownerOnlyEdit, 403);
   }
 
   const { operatorId } = await params;
@@ -80,7 +90,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     where: { id: operatorId, organizationId: session.user.organizationId },
     data: { isActive: false },
   });
-  if (deleted.count !== 1) return badRequest("Operator not found", 404);
+  if (deleted.count !== 1) return badRequest(UI.addop.notFound, 404);
 
   return NextResponse.json({ hidden: true });
 }
