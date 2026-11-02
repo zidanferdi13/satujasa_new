@@ -133,8 +133,9 @@ test("file lists mask the KTP and never render it raw (A17)", () => {
 
 test("file pages scope by the session's organizationId (tenant isolation)", () => {
   assert.match(src("lib/file-queries.ts"), /where: \{ id: fileId, organizationId \}/);
-  assert.match(src("app/dashboard/operator/files/page.tsx"), /where: \{ organizationId, operatorId \}/);
-  assert.match(src("app/dashboard/owner/files/page.tsx"), /where: \{ organizationId \}/);
+  // A23's ownership filter may only narrow further: the scope fields stay first in the clause.
+  assert.match(src("app/dashboard/operator/files/page.tsx"), /where: \{ organizationId, operatorId[,\s}]/);
+  assert.match(src("app/dashboard/owner/files/page.tsx"), /where: \{ organizationId[,\s}]/);
 });
 
 test("BUG-16: an operator already in the requested state claims no seat", () => {

@@ -1,6 +1,6 @@
 # Biro Jasa Management Platform
 
-A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle document services (STNK, Plate, Registration, SIM) with role-based dashboards, subscription billing via Midtrans, and revenue tracking.
+A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle document services (STNK, Plate, Registration, SIM) with role-based dashboards, subscription billing via manual bank transfer, and revenue tracking.
 
 ## Tech Stack
 
@@ -9,7 +9,7 @@ A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle d
 - **Database**: PostgreSQL 17 (local cluster for development, client VPS in production)
 - **ORM**: Prisma
 - **Auth**: NextAuth.js v5
-- **Payments**: Midtrans (Core API + Snap UI)
+- **Payments**: manual bank transfer, verified by a Super Admin (A20)
 - **PDF**: PDFKit
 - **Excel**: xlsx (SheetJS)
 - **Charts**: Recharts
@@ -20,7 +20,6 @@ A multi-tenant SaaS platform for Biro Jasa (service bureaus) to manage vehicle d
 
 - Node.js 18+
 - PostgreSQL 17 (local cluster; `scripts/demo.sh` creates a throwaway one on port 5433)
-- Midtrans account (sandbox for development)
 
 ### Demo environment
 
@@ -69,7 +68,7 @@ src/
 │   │   └── operator/     # Operator dashboard
 │   ├── api/              # API routes
 │   │   ├── auth/         # NextAuth + registration
-│   │   ├── subscription/ # Midtrans integration
+│   │   ├── subscription/ # subscribe screen + payment upload
 │   │   ├── owner/        # Owner API endpoints
 │   │   ├── operator/     # Operator API endpoints
 │   │   └── ...

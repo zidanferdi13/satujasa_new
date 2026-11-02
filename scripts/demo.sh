@@ -53,7 +53,6 @@ if [ -n "$TUNNEL" ]; then
   APP_URL="$TUNNEL"
   AUTH_TRUST_HOST="true"
 
-Midtrans sandbox notification URL: $TUNNEL/api/midtrans/notification
 Start the app with those exported:
   DATABASE_URL="$DATABASE_URL" AUTH_URL="$TUNNEL" APP_URL="$TUNNEL" AUTH_TRUST_HOST=true pnpm start -p 3010
 EOF

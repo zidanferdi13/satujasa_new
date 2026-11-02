@@ -159,11 +159,13 @@ model File {
 }
 
 // What SAMSAT distinguishes for a vehicle's registration and rates (A17). A select, never
-// free text: spelling variants would split the revenue-per-operator report. Provisional on
-// the CEO; a new value is an additive ALTER TYPE ... ADD VALUE.
+// free text: spelling variants would split the revenue-per-operator report. Closed at four
+// values by A23 (migration 7). "Pemerintah", never "Instansi".
 enum OwnershipType {
   PERORANGAN
   BADAN_USAHA
+  PEMERINTAH
+  YAYASAN
 }
 
 enum ServiceType {

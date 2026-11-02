@@ -28,6 +28,7 @@ import {
   planCtaHref,
   planCtaLabel,
 } from "./landing-copy.ts";
+import { UI } from "./ui-strings.ts";
 
 test("slugify trims, lowercases, strips accents and junk", () => {
   assert.equal(slugify("  Biro Jasa Maju  "), "biro-jasa-maju");
@@ -176,7 +177,11 @@ test("landing copy is verbatim from the locked docs", async () => {
     FAQ_COPY.heading,
     PRICING_COPY.seatNote,
   ];
-  for (const s of strings) assert.ok(docs.includes(s), `not in docs: ${s}`);
+  // A23: the doc stores the promise as {promise.core}/{promise.weekend}; the code imports the
+  // keys, so compare the sentence back to its placeholder before looking for it.
+  const normalize = (s: string) =>
+    s.split(UI.promise.core).join("{promise.core}").split(UI.promise.weekend).join("{promise.weekend}");
+  for (const s of strings) assert.ok(docs.includes(normalize(s)), `not in docs: ${s}`);
 });
 
 test("footer only links to sections that exist", () => {

@@ -11,7 +11,7 @@ export type Plan = {
   name: string;
   priceMonthly: number | null; // null = negotiated (CUSTOM)
   operatorLimit: number | null; // null = negotiated (CUSTOM)
-  checkout: boolean; // can be bought through Midtrans checkout
+  checkout: boolean; // can be bought from the subscribe screen (manual transfer, A20)
   featured: boolean;
 };
 

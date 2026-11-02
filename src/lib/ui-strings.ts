@@ -88,11 +88,20 @@ export const UI = {
     invalidApi: "Tautan tidak valid atau sudah kedaluwarsa.",
   },
 
-  lock: {
+  // §15: the locked screen and the subscribe screen are one route, so one set of keys (A20/A21).
+  sub: {
     title: "Langganan Anda belum aktif",
     body: "Pilih paket untuk mulai mencatat berkas dan mengelola operator. Data Anda tetap tersimpan dan bisa diekspor.",
     operatorNote: "Operator tidak bisa login sampai langganan aktif.",
+    planHeading: "Pilih Paket",
     export: "Ekspor Data",
+  },
+
+  // §14 / A21: one promise, two sentences. Every placement renders these keys; nothing retypes them.
+  promise: {
+    core: "Verifikasi pembayaran maksimal 1 hari kerja.",
+    weekend:
+      "Pembayaran yang dikirim pada Sabtu, Minggu, atau hari libur nasional diproses paling lambat pada akhir hari kerja berikutnya. Contoh: transfer pada Jumat malam diverifikasi paling lambat Senin.",
   },
 
   op: {
@@ -101,7 +110,7 @@ export const UI = {
 
   co: {
     upgradeNote:
-      "Upgrade mulai berlaku hari ini dan batas operator langsung bertambah. Sisa hari paket Basic tidak dihitung prorata.",
+      "Upgrade mulai berlaku setelah bukti transfer diverifikasi, dan batas operator langsung bertambah. Sisa hari paket Basic tidak dihitung prorata.",
     renewNote: "Perpanjangan dimulai setelah periode aktif Anda berakhir, jadi tidak ada hari yang hilang.",
     downgradeRefused:
       "Paket tidak bisa diturunkan selama Pro masih aktif. Pilih Basic setelah periode Pro berakhir.",
@@ -185,6 +194,8 @@ export const UI = {
   ownership: {
     PERORANGAN: "Perorangan",
     BADAN_USAHA: "Badan Usaha",
+    PEMERINTAH: "Pemerintah",
+    YAYASAN: "Yayasan",
   },
 
   empty: {
@@ -251,6 +262,11 @@ export const UI = {
     operator: "Operator",
     date: "Tanggal",
     edit: "Ubah", // th.actions: single icon button, aria-label only. No delete (§12c).
+    ownership: "Jenis Kepemilikan",
+  },
+
+  filter: {
+    all: "Semua",
   },
 
   notFound: "Halaman belum tersedia", // A16

@@ -26,7 +26,7 @@ Section title: Semua yang Anda Butuhkan untuk Operasional
 1. Manajemen Operator — Tambah dan kelola operator sesuai kapasitas paket Anda. Setiap operator punya akses sendiri.
 2. Pelacakan Berkas — Pantau status setiap berkas dari masuk hingga selesai, lengkap dengan riwayat perubahannya.
 3. Laporan Keuangan Otomatis — RESOLVED by Designer (`docs/ui-strings-id.md` feat3): "Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, dan sisanya adalah jasa Anda." Build from that file; this line is superseded. Spelling is always SAMSAT.
-4. Pembayaran Online — Langganan dibayar lewat Midtrans. Paket aktif otomatis begitu pembayaran berhasil.
+4. RESOLVED by Designer (`docs/ui-strings-id.md` feat4, A20): "Pembayaran Transfer Bank" — "Bayar lewat transfer bank dan unggah bukti transfer dari dashboard." + `{promise.core}`. The Midtrans line is superseded.
 5. Hak Akses Owner & Operator — Owner melihat seluruh data. Operator hanya melihat berkas yang ditugaskan kepadanya.
 6. Ekspor PDF & Excel — Unduh laporan harian, bulanan, atau rentang tanggal dalam format PDF dan Excel.
 
@@ -40,8 +40,8 @@ Source of truth for values: `src/lib/plans.ts`. Never hardcode a price in JSX.
 - Nothing about free trials, anywhere.
 
 ## FAQ (accordion, 6 items)
-1. Berapa lama proses aktivasi setelah pembayaran? — Langsung. Setelah Midtrans mengonfirmasi pembayaran, paket Anda aktif otomatis.
-2. Apakah ada masa uji coba gratis? — Tidak. Paket langsung aktif setelah pembayaran pertama.
+1. Berapa lama proses aktivasi setelah pembayaran? — RESOLVED by Designer (`docs/ui-strings-id.md` faq1, A21): `{promise.core} {promise.weekend}`. Built from the promise keys, never retyped.
+2. Apakah ada masa uji coba gratis? — RESOLVED by Designer (faq2, A20): "Tidak. Paket aktif setelah pembayaran pertama diverifikasi."
 3. Berapa operator yang bisa saya tambahkan? — RESOLVED by Designer (`docs/ui-strings-id.md` faq3): "Basic mendukung 1 operator dan Pro 3 operator. Jika Anda ikut mengerjakan berkas, akun owner memakai satu slot. Butuh lebih banyak? Ajukan paket Custom lewat Hubungi Kami." Plus `pricing.seatNote` under the pricing caption.
 4. Bisakah saya upgrade dari Basic ke Pro? — Bisa. Upgrade diproses sebagai pembayaran baru dan batas operator langsung bertambah. Sisa periode Basic tidak dihitung prorata.
 5. Apakah data saya aman? — Data setiap organisasi dipisahkan di level database, dan setiap akses difilter berdasarkan peran pengguna.
@@ -54,15 +54,13 @@ Source of truth for values: `src/lib/plans.ts`. Never hardcode a price in JSX.
 - Produk: Fitur, Harga, FAQ  (in-page anchors `#fitur`, `#harga`, `#faq` — these exist)
 - Perusahaan, Bantuan, Legal columns: **OMITTED for MVP** until real destinations exist (PM + CEO ruling). Do not reserve space, do not grey out.
   - Kontak / Hubungi Kami → added when the WhatsApp number arrives.
-  - Kebijakan Privasi / Syarat & Ketentuan → added when CEO-drafted legal content exists; required before Midtrans production.
+  - Kebijakan Privasi / Syarat & Ketentuan → added when CEO-drafted legal content exists; required before launch (A11).
   - Tentang, Panduan → no content owner; dropped from MVP.
 - Business identity block:
   - Zidan Ferdiansyah
-  - Pondok Ungu Permai Blok AL 8 No 9, Kel. Bahagia, Kec. Babelan, Kab. Bekasi
+  - Kab. Bekasi, Jawa Barat (A20: city level only; no street)
   - zidanferdi13@gmail.com
-  - NPWP: **omitted** until the client confirms. Never render a blank NPWP field.
-  - Midtrans merchant is registered as **perorangan** (individual), so the legal name + address above are what must appear.
-  - PENDING CLIENT: approval to publish the home address publicly.
+  - Public identity per A20: name, Kab. Bekasi, email, WhatsApp. No street, no NPWP.
 - Bottom: © 2026 Biro Jasa. Hak cipta dilindungi.
 
 **No dead links.** Every footer link resolves to a real section or route, or it is removed from the footer for the MVP.

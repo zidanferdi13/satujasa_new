@@ -8,18 +8,24 @@ import { formatRupiah } from "@/lib/money";
 import { formatJakartaDate } from "@/lib/date-format";
 import { operatorIdFor } from "@/lib/file-queries";
 import { StatusBadge } from "@/components/files/status-badge";
+import { OwnershipFilter, parseOwnership } from "@/components/files/ownership-filter";
 import { buttonVariants } from "@/components/ui/button";
 import { UI } from "@/lib/ui-strings";
 
 /** Operator · Berkas Saya. Only this operator's own files, never the organization's. */
-export default async function OperatorFilesPage() {
+export default async function OperatorFilesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ownership?: string }>;
+}) {
   const session = await requireRole(MemberRole.OPERATOR);
   const organizationId = session.user.organizationId ?? "";
+  const ownership = parseOwnership((await searchParams).ownership);
   const operatorId = await operatorIdFor(session.user.id, organizationId);
 
   const files = operatorId
     ? await prisma.file.findMany({
-        where: { organizationId, operatorId },
+        where: { organizationId, operatorId, ...(ownership ? { ownershipType: ownership } : {}) },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -44,6 +50,8 @@ export default async function OperatorFilesPage() {
           </Link>
         )}
       </div>
+
+      <OwnershipFilter basePath="/dashboard/operator/files" active={ownership} />
 
       {files.length === 0 ? (
         // §12a empty.myFiles: the action renders because its route exists.

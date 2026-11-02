@@ -9,21 +9,28 @@ import { formatRupiah } from "@/lib/money";
 import { formatJakartaDate } from "@/lib/date-format";
 import { loadOrganizationStatus } from "@/lib/org-status";
 import { StatusBadge } from "@/components/files/status-badge";
+import { OwnershipFilter, parseOwnership } from "@/components/files/ownership-filter";
 import { buttonVariants } from "@/components/ui/button";
 import { UI } from "@/lib/ui-strings";
 
 /** Owner · Berkas. Every file in the organization, whichever operator entered it. */
-export default async function OwnerFilesPage() {
+export default async function OwnerFilesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ownership?: string }>;
+}) {
   const session = await requireRole(MemberRole.OWNER);
   const organizationId = session.user.organizationId;
   if (!organizationId) redirect("/login");
+
+  const ownership = parseOwnership((await searchParams).ownership);
 
   // A12: a lapsed organization sees the locked screen, not a list it can still read and edit.
   const status = await loadOrganizationStatus(organizationId);
   if (!status?.entitled) redirect("/dashboard/owner");
 
   const files = await prisma.file.findMany({
-    where: { organizationId },
+    where: { organizationId, ...(ownership ? { ownershipType: ownership } : {}) },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -41,6 +48,8 @@ export default async function OwnerFilesPage() {
   return (
     <div>
       <h1 className="mb-6 text-3xl font-bold">{UI.nav.files}</h1>
+
+      <OwnershipFilter basePath="/dashboard/owner/files" active={ownership} />
 
       {files.length === 0 ? (
         // §12a empty.ownerFiles: no action, because the owner has no Operator row until M4.

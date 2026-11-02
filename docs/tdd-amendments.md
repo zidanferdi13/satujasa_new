@@ -344,3 +344,61 @@ one implementation (manual). No stub interface for a gateway we do not call.
   "maksimal 1 hari kerja" while there is no queue, the promise is unkeepable by construction.
 - Bank details live only in the build machine's `.env` (`BANK_NAME`, `BANK_ACCOUNT_NUMBER`,
   `BANK_ACCOUNT_NAME`); `.env.example` keeps `0000000000`. Never in a commit, log, or thread.
+
+## A22. Backup destination and key custody closed; address closed; console email (CEO)
+
+**Supersedes A15's key sentence** ("the client keeps one copy, Jihann keeps one sealed copy"). CEO
+ruling: the client holds the only key; **no agency copy survives handover**.
+
+- **Backup:** encrypted daily `pg_dump -Fc` to a dedicated folder in the client's Google Drive
+  (`zidanferdi13@gmail.com`), 30-day retention, `rclone` as the transport.
+- **Key:** the client generates the passphrase-protected keypair and keeps it in two places
+  (password manager or PIN-protected note, plus one printed copy). The build machine and the VPS
+  hold **only the public key** — they can encrypt, never decrypt. Restore tests are run with the
+  client's copy.
+- **Address:** closed — "Zidan Ferdiansyah, Kab. Bekasi, Jawa Barat", email, WhatsApp. No street,
+  no NPWP. Not an open item.
+- **Email:** console channel accepted for the local phase. **Launch gate:** before the first
+  paying customer, real email is required — a password reset that only prints to a console is not
+  a delivered reset. Resend key stays a drop-in env var.
+
+**What is still open is implementation, not the decision.** `scripts/backup.sh` does not exist yet
+(`scripts/` holds only `demo.sh`), and the QA plan has no backup or restore check. Criterion #7
+stays unproven until both exist.
+
+**Local-phase scope call.** Drive delivery needs an `rclone` remote authorized against the client's
+Google account — a client-side consent step. Until it exists, the backup runs to a local directory
+and the Drive leg is documented, not demonstrated. Recommendation: take the consent once, while
+the demo machine is the system of record, so criterion #7 is shown working with a timed restore
+instead of promised for deploy day. If the client declines, criterion #7 becomes a deploy-time
+item and I say so to the CEO rather than marking it done.
+
+## A23. Designer §13–§17 accepted; ownership enum closed at four values (CEO)
+
+**OwnershipType is closed at four values** — `PERORANGAN`, `BADAN_USAHA`, `PEMERINTAH`, `YAYASAN`
+(CEO 2026-11-02). Designer writes the two new labels into §17; the same label appears on all
+four surfaces (form select, detail view, list filter, export column). Default stays Perorangan.
+Developer adds the two values in **migration 7** (migration 6 is `subscriptionPaymentId`).
+
+**Surat Jalan prints the full NIK** — supersedes A17's "masked pending CEO" and the same sentence
+at `ui-strings-id.md:304`. KTP masking in lists and logs is unchanged; the printed document is the
+customer's own KTP shown to the customer.
+
+**Promise is one pair of keys, imported, never retyped.** `promise.core` + `promise.weekend` are
+defined once in `src/lib/ui-strings.ts` and referenced by the subscribe screen, FAQ #1 and
+`/syarat-ketentuan` (which does not exist yet). `grep -rn "maksimal 1 hari kerja" src` must match
+the definition only — not a JSX literal, not a second copy.
+
+**Landing wiring.** `src/lib/landing-copy.ts:58,109,113` still carry the Midtrans claims; they are
+rewired from §13 in the same commit as the A20 deletions. Until Designer's `feat4`/`faq2` text is
+wired, QA's false-claim exemption for those lines stands.
+
+**`co.failed` is dead copy.** No gateway exists to produce a failed payment, so the key stays in
+the doc and must not be wired. `co.upgradeNote` changed to "setelah bukti transfer diverifikasi".
+
+**`lock.*` becomes `sub.*`.** Same text, new key names, §15 states. `dashboard/owner/page.tsx:24-26`
+is Developer's change; a stale `UI.lock.*` reference fails typecheck, which is the desired outcome.
+
+**One open payment per organization.** Pressing "Ganti paket" while a payment is `UNPAID` replaces
+that row in place — same payment code, new plan, no second row. `WAITING_VERIFICATION` cannot be
+changed: verify or reject it first. This keeps the transfer note unambiguous for the verifier.

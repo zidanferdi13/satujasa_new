@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
   const organizationId = session.user.organizationId;
   // A12: no new operator without a paid, unexpired subscription (a lapsed org keeps its old limit).
-  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.lock.title, 403);
+  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.sub.title, 403);
   const parsed = await readJson(request);
   if (!parsed.ok) return badRequest("Request body must be valid JSON");
 

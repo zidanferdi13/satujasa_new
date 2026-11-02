@@ -12,7 +12,8 @@ import { z } from "zod";
 import { FILE_STATUSES, pickupRefused } from "./file-rules.ts";
 import { UI } from "./ui-strings.ts";
 
-export const OWNERSHIP_TYPES = ["PERORANGAN", "BADAN_USAHA"] as const;
+export const OWNERSHIP_TYPES = ["PERORANGAN", "BADAN_USAHA", "PEMERINTAH", "YAYASAN"] as const;
+export type OwnershipTypeValue = (typeof OWNERSHIP_TYPES)[number];
 export const SERVICE_TYPES = ["STNK", "PLAT", "MUTASI", "SIM_A", "SIM_B", "SIM_C"] as const;
 
 /** Int32 ceiling for `File.*Price` columns; above this the insert would fail at the database. */

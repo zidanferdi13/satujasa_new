@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ fi
   const organizationId = session?.user?.organizationId;
   if (!session?.user || !organizationId) return badRequest(UI.common.notSignedIn, 401);
 
-  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.lock.title, 403);
+  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.sub.title, 403);
 
   const { fileId } = await params;
 

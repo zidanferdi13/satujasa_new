@@ -21,9 +21,12 @@ export default async function OwnerDashboardPage() {
   if (!status || !status.entitled) {
     return (
       <div className="max-w-5xl">
-        <h1 className="text-3xl font-bold mb-2">{UI.lock.title}</h1>
-        <p className="text-muted-foreground mb-1">{UI.lock.body}</p>
-        <p className="text-muted-foreground mb-8">{UI.lock.operatorNote}</p>
+        <h1 className="text-3xl font-bold mb-2">{UI.sub.title}</h1>
+        <p className="text-muted-foreground mb-1">{UI.sub.body}</p>
+        {/* A21: place 1 of 3. Same two keys as the FAQ; the Terms page is blocked on A11. */}
+        <p className="text-muted-foreground mb-1">{UI.promise.core}</p>
+        <p className="text-muted-foreground mb-1">{UI.promise.weekend}</p>
+        <p className="text-muted-foreground mb-8">{UI.sub.operatorNote}</p>
         <PricingCards paidPlansHref={null} />
       </div>
     );

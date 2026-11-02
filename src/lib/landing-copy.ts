@@ -10,6 +10,7 @@
  * "Laporan Keuangan Otomatis" feature, whose body line used to subtract the service fee a
  * second time. Revenue = customer payment − SAMSAT cost = biaya jasa.
  */
+import { UI } from "./ui-strings.ts";
 import { formatRupiah } from "./money.ts";
 import { PLANS, type PlanId } from "./plans.ts";
 
@@ -54,8 +55,9 @@ export const FEATURES_COPY = {
       body: "Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, dan sisanya adalah jasa Anda.",
     },
     {
-      title: "Pembayaran Online",
-      body: "Langganan dibayar lewat Midtrans. Paket aktif otomatis begitu pembayaran berhasil.",
+      // A20/A23: no gateway, and the promise is imported rather than retyped.
+      title: "Pembayaran Transfer Bank",
+      body: `Bayar lewat transfer bank dan unggah bukti transfer dari dashboard. ${UI.promise.core}`,
     },
     {
       title: "Hak Akses Owner & Operator",
@@ -105,12 +107,11 @@ export const FAQ_COPY = {
   items: [
     {
       question: "Berapa lama proses aktivasi setelah pembayaran?",
-      answer:
-        "Langsung. Setelah Midtrans mengonfirmasi pembayaran, paket Anda aktif otomatis.",
+      answer: `${UI.promise.core} ${UI.promise.weekend}`,
     },
     {
       question: "Apakah ada masa uji coba gratis?",
-      answer: "Tidak. Paket langsung aktif setelah pembayaran pertama.",
+      answer: "Tidak. Paket aktif setelah pembayaran pertama diverifikasi.",
     },
     {
       question: "Berapa operator yang bisa saya tambahkan?",

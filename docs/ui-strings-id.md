@@ -113,13 +113,15 @@ Placeholders in `{braces}` are interpolated. Money always via `formatRupiah()`.
 | lock.export | (only if export exists) Ekspor Data |
 | op.blocked (operator login attempt) | Akses ditutup karena langganan organisasi belum aktif. Hubungi owner Anda. |
 
+A20/A21: `lock.title`/`lock.body`/`lock.operatorNote` are now the `sub.*` keys in §15 — one screen, one set of strings. The text is unchanged; the keys are not duplicated.
+
 Lapsed and never-paid orgs see the same screen (A12). No "expired on {date}" variant in MVP.
 
 ## 7. Checkout disclosure (A13)
 
 | Key | Indonesian |
 |---|---|
-| co.upgradeNote | Upgrade mulai berlaku hari ini dan batas operator langsung bertambah. Sisa hari paket Basic tidak dihitung prorata. |
+| co.upgradeNote | Upgrade mulai berlaku setelah bukti transfer diverifikasi, dan batas operator langsung bertambah. Sisa hari paket Basic tidak dihitung prorata. |
 | co.renewNote | Perpanjangan dimulai setelah periode aktif Anda berakhir, jadi tidak ada hari yang hilang. |
 | co.downgradeRefused | Paket tidak bisa diturunkan selama Pro masih aktif. Pilih Basic setelah periode Pro berakhir. |
 | co.pay | Bayar {amount} |
@@ -128,6 +130,8 @@ Lapsed and never-paid orgs see the same screen (A12). No "expired on {date}" var
 | co.failed | Pembayaran gagal atau dibatalkan. Silakan coba lagi. |
 
 Placement: `co.*Note` directly above the pay button, `text-sm`, `--muted-foreground`, no icon.
+
+A20: there is no gateway, so `co.failed` ("Pembayaran gagal atau dibatalkan") has no trigger and must not be wired — a payment that never arrives stays `UNPAID`, and one that is wrong becomes `REJECTED` with a reason (§15, state D). A20 correction: "mulai berlaku hari ini" was true only while a gateway confirmed payment instantly. With manual verification the upgrade starts at verification, so the sentence moves with it. A16/A20 also mean `co.pending` is a state of the subscribe screen, not a button state.
 
 ## 8. Dashboard shell (sidebar.tsx)
 
@@ -246,7 +250,7 @@ Draft taken from `prisma/schema.prisma` (`model File`) so M3 does not wait on a 
 | file.customerName | Nama Pelanggan | error: Nama pelanggan wajib diisi. |
 | file.customerKtp | NIK KTP | helper: 16 angka, sesuai KTP. error: NIK harus 16 angka. |
 | file.vehicleNumber | Nomor Kendaraan | helper: Contoh: B 1234 XYZ. error: Nomor kendaraan wajib diisi. |
-| file.ownershipType | Jenis Kepemilikan | select (enum `OwnershipType`, A17): `PERORANGAN` → Perorangan, `BADAN_USAHA` → Badan Usaha. Default Perorangan. Provisional on CEO; a new value needs one more label, nothing else. |
+| file.ownershipType | Jenis Kepemilikan | select (enum `OwnershipType`, A17/A23): `PERORANGAN` → Perorangan, `BADAN_USAHA` → Badan Usaha, `PEMERINTAH` → Pemerintah, `YAYASAN` → Yayasan. Default Perorangan. Labels from `ownership.*` (§17). |
 | file.serviceType | Jenis Layanan | options from §12 (STNK, Ganti Plat, Mutasi, SIM A, SIM B, SIM C) |
 | file.notes | Catatan | placeholder: Opsional |
 
@@ -297,7 +301,7 @@ Draft taken from `prisma/schema.prisma` (`model File`) so M3 does not wait on a 
 Exceptions, per A17 — these are not oversights:
 - **Owner export contains the full KTP.** The data is the owner's, and handing it back to them is what export is for (A12). Masking it there would break the export's only purpose. Owner-only; operators have no export path at all.
 - **Logs never contain it.** Not masked — absent.
-- **Surat Jalan: masked for now, pending the CEO.** It is printed for the customer, whose own KTP it is, so masking may be pointless there; but that is a client decision, not a design one. If the CEO says it carries the NIK, the field prints unmasked and nothing else changes.
+- **Surat Jalan prints the full NIK (CEO ruling, A20/A23).** It goes to the customer, whose own KTP it is.
 
 **No delete (§12c)**
 
@@ -333,7 +337,213 @@ Cancel is confirmed (§12b, `file.cancelConfirm`) because `CANCELED` is terminal
 | faq3.q | Berapa operator yang bisa saya tambahkan? |
 | faq3.a | Basic mendukung 1 operator dan Pro 3 operator. Jika Anda ikut mengerjakan berkas, akun owner memakai satu slot. Butuh lebih banyak? Ajukan paket Custom lewat Hubungi Kami. |
 | pricing.seatNote | Slot operator sudah termasuk akun owner jika Anda ikut mengerjakan berkas. |
+| feat4.title | Pembayaran Transfer Bank |
+| feat4.body | Bayar lewat transfer bank dan unggah bukti transfer dari dashboard. {promise.core} |
+| faq1.q | Berapa lama proses aktivasi setelah pembayaran? |
+| faq1.a | {promise.core} {promise.weekend} |
+| faq2.q | Apakah ada masa uji coba gratis? |
+| faq2.a | Tidak. Paket aktif setelah pembayaran pertama diverifikasi. |
+
+feat4 ends with `promise.core` itself rather than its own wording, so the landing page does not grow a fourth phrasing of the promise. feat4 replaces the old "Pembayaran Online … lewat Midtrans" line: there is no gateway (A20), so "otomatis" would be a false claim. faq2's answer no longer says "langsung setelah pembayaran" for the same reason — activation is now a human verification step.
 
 Order: feat3 goes back in position 3; FAQ #3 goes back in position 3. Features = 6, FAQ = 6.
 `pricing.seatNote` sits under the caption "Harga dalam Rupiah. Ditagih bulanan.", same style.
 Tests in src/lib/m1.test.ts that assert 5 features / 5 FAQ items must flip to 6 in the same commit.
+
+---
+
+# Part 2 — Manual payment (A20/A21)
+
+## 14. The promise — one string, three places
+
+Two keys. Everything that promises a verification time renders these, and nothing else. Not paraphrased, not shortened, not reordered: QA checks the three placements byte for byte, and the only way that survives an edit is one key per sentence.
+
+| Key | Indonesian |
+|---|---|
+| promise.core | Verifikasi pembayaran maksimal 1 hari kerja. |
+| promise.weekend | Pembayaran yang dikirim pada Sabtu, Minggu, atau hari libur nasional diproses paling lambat pada akhir hari kerja berikutnya. Contoh: transfer pada Jumat malam diverifikasi paling lambat Senin. |
+
+Counted in working days, Monday–Friday, excluding national holidays. **The app does not compute this** (A21): no holiday calendar, no working-day arithmetic anywhere in code. The sentence states the rule; the verification queue is what keeps it.
+
+Where they appear:
+1. **Locked/subscribe screen** — directly under the heading, before the plan cards.
+2. **Landing FAQ #1** — `{promise.core} {promise.weekend}`, in that order, one paragraph.
+3. **`/syarat-ketentuan`** — same two keys in the payment section. The page does not exist yet (A11); when it ships it imports these keys, it does not retype them.
+
+Why the Monday example is in the sentence: "maksimal 1 hari kerja" is ambiguous for a Friday-night transfer, and the customer will read it as "Saturday". The example removes the reading without adding a second promise. There is exactly one promise in the product — no "biasanya lebih cepat", no "segera", no percentage. If verification starts beating the promise routinely, the promise is still the promise.
+
+## 15. Subscribe screen (`/dashboard/subscription`)
+
+**One screen, not two.** The locked screen and the payment screen are the same route: an owner with no active plan lands here, and the screen shows whichever of the states below applies. Two screens showing the same cards is how a user ends up on the one that cannot help them.
+
+Reachable while locked. It is the only screen a locked owner can use; `/dashboard` stays closed (A12).
+
+| Key | Indonesian |
+|---|---|
+| sub.title | Langganan Anda belum aktif |
+| sub.body | Pilih paket untuk mulai mencatat berkas dan mengelola operator. Data Anda tetap tersimpan dan bisa diekspor. |
+| sub.operatorNote | Operator tidak bisa login sampai langganan aktif. |
+| sub.planHeading | Pilih Paket |
+| sub.cards | reuse `PricingCards` (prices from `src/lib/plans.ts`) |
+| sub.export | Ekspor Data |
+
+State A — no payment yet: heading + `promise.core`/`promise.weekend` + cards. Basic/Pro buttons create the payment row and move to state B. Custom keeps "Hubungi Kami" → WhatsApp.
+
+State B — `UNPAID`:
+
+| Key | Indonesian |
+|---|---|
+| pay.title | Selesaikan Pembayaran |
+| pay.codeLabel | Kode Pembayaran |
+| pay.codeHelp | Cantumkan kode ini di berita transfer agar pesanan Anda mudah ditemukan. |
+| pay.amountLabel | Jumlah |
+| pay.bankLabel | Transfer ke |
+| pay.accountName | a.n. {name} |
+| pay.copy | Salin |
+| pay.copied | Nomor rekening disalin. |
+| pay.steps | 1. Transfer sesuai jumlah di atas. 2. Cantumkan kode pembayaran di berita transfer. 3. Unggah bukti transfer di bawah ini. |
+| pay.uploadCta | Unggah Bukti Transfer |
+| pay.uploadHint | JPG, PNG, atau PDF. Maksimal 5 MB. |
+| pay.waCta | Konfirmasi lewat WhatsApp |
+| pay.waHelp | Sudah transfer? Kirim bukti lewat WhatsApp sebagai alternatif unggah. |
+| pay.bankMissing | Nomor rekening belum tersedia. Hubungi kami lewat WhatsApp untuk menyelesaikan pembayaran. |
+| pay.changePlan | Ganti paket |
+
+`pay.bankMissing` is the missing-env state (A20): WhatsApp only, never a blank account field, and the server logs it. `pay.changePlan` returns to state A and replaces the `UNPAID` row rather than stacking a second one.
+
+State C — `WAITING_VERIFICATION`:
+
+| Key | Indonesian |
+|---|---|
+| verify.waitTitle | Bukti transfer sudah kami terima |
+| verify.waitBody | Kami akan memverifikasi pembayaran Anda. Bila ada yang perlu dikonfirmasi, kami menghubungi Anda lewat WhatsApp. |
+| verify.waitPromise | {promise.core} {promise.weekend} (same keys, same order as everywhere else) |
+| verify.waitCode | Kode pembayaran: {code} |
+| verify.waitLocked | Selama menunggu, dashboard dan data berkas belum bisa dibuka. |
+
+`verify.waitLocked` is the honest one: only `PAID` grants access (A20), so an owner who has paid and is waiting must be told they are still locked rather than left clicking a dashboard that refuses them.
+
+State D — `REJECTED` (A20: same row, re-upload, no new order):
+
+| Key | Indonesian |
+|---|---|
+| verify.rejTitle | Bukti transfer belum bisa kami terima |
+| verify.rejReasonLabel | Alasan |
+| verify.rejBody | Periksa kembali bukti transfer Anda, lalu unggah ulang. Anda tidak perlu membuat pesanan baru. |
+| verify.rejReupload | Unggah Ulang Bukti |
+| verify.rejWa | Tanya lewat WhatsApp |
+| verify.rejCode | Kode pembayaran tetap {code} |
+
+The rejection reason comes from the admin's own words (§16) and is shown verbatim. A rejection with no explanation reads as a lost payment, and the customer's next move is a phone call.
+
+Upload feedback:
+
+| Key | Indonesian |
+|---|---|
+| up.sending | Mengunggah… |
+| up.done | Bukti transfer berhasil diunggah. |
+| up.tooBig | Ukuran file maksimal 5 MB. |
+| up.badType | Format file harus JPG, PNG, atau PDF. |
+| up.unreadable | File tidak bisa dibaca. Coba unggah ulang. |
+| up.failed | Bukti transfer gagal diunggah. Silakan coba lagi. |
+
+`up.badType` and `up.unreadable` are separate on purpose: the first is the user's mistake, the second is ours (magic-byte check rejected a file the picker allowed). One message for both would send the user to re-pick a file that is already fine.
+
+State E — `PAID`: redirect to `/dashboard` with `co.success`.
+
+## 16. Super Admin console (M2)
+
+| Key | Indonesian |
+|---|---|
+| adm.navQueue | Verifikasi Pembayaran |
+| adm.navOrgs | Organisasi |
+| adm.queueTitle | Verifikasi Pembayaran |
+| adm.queueSort | Terlama di atas |
+| adm.queueEmpty | Tidak ada pembayaran yang menunggu verifikasi. |
+| adm.colCode | Kode |
+| adm.colOrg | Organisasi |
+| adm.colOwner | Pemilik |
+| adm.colPlan | Paket |
+| adm.colAmount | Jumlah |
+| adm.colSent | Dikirim (WIB) |
+| adm.colAge | Umur |
+| adm.colAction | — (`aria-label`: Periksa) |
+| adm.ageToday | Hari ini |
+| adm.ageYesterday | 1 hari lalu |
+| adm.ageDays | {n} hari lalu |
+
+Order: oldest `WAITING_VERIFICATION` first (A21). Age is plain elapsed time, `Intl.RelativeTimeFormat('id')` style — **no working-day counter, no badge that colours red at the promise deadline**; the promise is a human commitment and the queue is a reminder, not a timer. `adm.queueSort` is stated on screen so nobody assumes the list is alphabetical by customer.
+
+Admin detail + actions:
+
+| Key | Indonesian |
+|---|---|
+| adm.detailTitle | Periksa Pembayaran {code} |
+| adm.receipt | Bukti Transfer |
+| adm.receiptMissing | Bukti transfer tidak diunggah. Konfirmasi lewat WhatsApp. |
+| adm.verify | Verifikasi |
+| adm.reject | Tolak |
+| adm.verifyConfirm | Verifikasi pembayaran ini? Paket {plan} aktif sampai {date}. |
+| adm.rejectTitle | Tolak Pembayaran |
+| adm.rejectReasonLabel | Alasan penolakan (dilihat oleh pemilik) |
+| adm.rejectReasonRequired | Alasan penolakan wajib diisi. |
+| adm.rejectSend | Kirim Penolakan |
+| adm.verifiedOk | Pembayaran diverifikasi. Paket aktif sampai {date}. |
+| adm.rejectedOk | Pembayaran ditolak. Pemilik bisa mengunggah ulang. |
+| adm.alreadyDone | Pembayaran ini sudah diproses. |
+| adm.staleQueue | Daftar sudah diperbarui. Pembayaran ini tidak lagi menunggu verifikasi. |
+
+Rejection reasons offered as one-tap options (free text stays available):
+
+| Key | Indonesian |
+|---|---|
+| rr.unreadable | Bukti tidak terbaca |
+| rr.amountMismatch | Jumlah tidak sesuai |
+| rr.notTransfer | Bukan bukti transfer |
+| rr.other | Lainnya |
+
+`adm.rejectReasonLabel` says "dilihat oleh pemilik" because the reason is customer-facing copy written by an admin. Without that note, admins write "cek mutasi" and the customer reads it as an accusation.
+
+Admin errors and org controls:
+
+| Key | Indonesian |
+|---|---|
+| adm.errReceipt | Bukti transfer tidak bisa dibuka. |
+| adm.errGeneric | Tindakan gagal. Silakan coba lagi. |
+| adm.errForbidden | Halaman ini hanya untuk admin platform. |
+| adm.orgTitle | Organisasi |
+| adm.orgLimit | Batas Operator |
+| adm.orgLimitSave | Simpan Batas |
+| adm.orgLimitSaved | Batas operator disimpan. |
+| adm.orgLimitRequired | Batas operator wajib berupa angka 1 atau lebih. |
+| adm.orgDeactivate | Nonaktifkan |
+| adm.orgActivate | Aktifkan |
+| adm.orgDeactivateConfirm | Nonaktifkan organisasi ini? Owner melihat layar langganan dan operator tidak bisa masuk. Data tidak dihapus. |
+| adm.orgActivateConfirm | Aktifkan kembali organisasi ini? Akses mengikuti paket yang masih berlaku. |
+| adm.orgInactive | Nonaktif |
+
+`adm.orgDeactivateConfirm` names what the owner will see, because "nonaktifkan" alone sounds like deletion and an admin who is unsure will simply not press it — leaving a non-paying org with access.
+
+**What the admin console never shows:** files, KTP, transactions, revenue (A20, structural). No string exists for them here, which is the point.
+
+## 17. `ownershipType` — the four surfaces
+
+The enum has four values (A17, closed by A23). Four places render it, and all four take the same `ownership.*` label:
+
+| Surface | Rendering |
+|---|---|
+| File form select (`file.ownershipType`) | Perorangan / Badan Usaha / Pemerintah / Yayasan, default Perorangan |
+| File detail view | "Jenis Kepemilikan: {ownership.*}", e.g. "Jenis Kepemilikan: Yayasan" |
+| File list filter | Semua / Perorangan / Badan Usaha / Pemerintah / Yayasan |
+| Export (PDF/Excel) column | header "Jenis Kepemilikan", value = `ownership.*` label (never the raw enum) |
+
+| Key | Indonesian |
+|---|---|
+| ownership.PERORANGAN | Perorangan |
+| ownership.BADAN_USAHA | Badan Usaha |
+| ownership.PEMERINTAH | Pemerintah |
+| ownership.YAYASAN | Yayasan |
+| th.ownership | Jenis Kepemilikan |
+| filter.all | Semua |
+
+Order is the same everywhere: enum order, most common first. Filter puts "Semua" first because it is the reset state. "Pemerintah" is the CEO's term — not "Instansi", which must not appear as a label anywhere.

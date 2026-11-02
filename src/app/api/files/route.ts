@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (!session?.user || !organizationId) return badRequest(UI.common.notSignedIn, 401);
 
   // A12: no new berkas without a paid, unexpired subscription.
-  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.lock.title, 403);
+  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.sub.title, 403);
 
   // Files belong to a staff profile (Operator row), not to a login. The owner has no Operator row
   // until M4 owner-as-operator, so this path is not reachable from the owner UI; the message stays
