@@ -260,3 +260,87 @@ English is allowed only in developer-facing messages that no user can reach (e.g
   public `APP_URL` still creates a guessable login. Rule: seed exits 1 when `DEMO_PASSWORD` is
   unset **and** `APP_URL` is set to anything that is not `localhost`/`127.0.0.1`. `demo.sh`'s
   earlier check stays; it just is not the only one.
+
+## A20. Manual transfer replaces Midtrans (CEO ruling, PM-accepted)
+
+**Supersedes:** A18 in full (webhook refund + stale-order re-check: no gateway, no webhook). The
+A14 demo gate's "sandbox payment" step becomes "manual transfer verified by Super Admin". A15's
+tunnel stays, but only so the client can reach the local demo — no callback URL, no public
+webhook. A17's Surat Jalan clause is closed: the printed Surat Jalan carries the **full NIK**.
+
+### Payment model
+- `PaymentStatus { UNPAID, WAITING_VERIFICATION, PAID, REJECTED }` replaces
+  `PENDING/FAILED/EXPIRED/REFUNDED`. Refunds are manual (bank transfer back) and are recorded as
+  **organization deactivation**, not a status: no `REFUNDED` value in the MVP.
+- The row is created when the owner picks a plan, so `UNPAID` exists before money moves.
+  `orderId` keeps its unique constraint and becomes the **payment code** the customer writes in
+  the transfer note (server-generated, e.g. `BJ-7F3KQ2`). Renaming the column is churn for no gain.
+- **Only `PAID` grants access.** `WAITING_VERIFICATION` and `REJECTED` grant nothing.
+- Verification is a Super Admin action that creates or extends the Subscription using the existing
+  A13 rules (`max(now, currentPeriodEnd)` for same-plan renewal, immediate start for an upgrade).
+  `Subscription.subscriptionPaymentId` now points at the manual payment.
+- `REJECTED` keeps the same row: the owner re-uploads, the row returns to `WAITING_VERIFICATION`.
+  No new rows per attempt. Keep `verifiedAt/verifiedByUserId` and `rejectedAt/rejectedByUserId`.
+- Both confirmation paths (receipt upload, WhatsApp) set `WAITING_VERIFICATION`. Both are
+  idempotent; either alone is enough. The WhatsApp button also opens `wa.me/6281319535441` with
+  the payment code, plan and amount pre-filled.
+
+### Platform admin
+- `User.platformRole PlatformRole?` enum `{ SUPER_ADMIN }`. **Not** a `MemberRole`: a tenant role
+  would put the admin inside an organization. A Super Admin has no `Member` row and no
+  `organizationId`.
+- Super Admin may: verify/reject payments, set a Custom org's `operatorLimit`, activate/deactivate
+  an organization. May read: org name, owner name/email, payments, receipts. **May not** read
+  `File`, KTP, transactions or reports of any tenant — enforced structurally: no admin module
+  imports `prisma.file`/`prisma.transaction`, tenant routes' `requireRole` excludes
+  `platformRole != null`, and a unit test asserts the imports. RLS remains the safety net.
+- Deactivation sets `Organization.isActive = false`: owner sees the locked screen, operators are
+  refused at sign-in, history untouched.
+
+### Receipts
+- Stored under `var/receipts/<paymentId>/` (outside `public/`, never statically served). DB keeps
+  path, mime, size, uploader. Max 5 MB, `image/jpeg|png|pdf`, verified by magic bytes, not by
+  extension or the client header.
+- Served only by `GET /api/payments/[id]/receipt`, authorized: owner of that payment's
+  organization, or a Super Admin. No public URL. If a page needs headerless `<img>` loading, it
+  gets a 5-minute HMAC token; otherwise no token at all.
+- **Retention:** images deleted 90 days after `verifiedAt`; the payment row keeps amount, dates,
+  status, verifier. `scripts/prune-receipts.ts` runs opportunistically whenever a Super Admin
+  opens the verification queue, and from cron on the VPS. The Privacy Policy may only claim
+  deletion once the script exists.
+
+### Bank details and public identity
+- `BANK_NAME`, `BANK_ACCOUNT_NUMBER`, `BANK_ACCOUNT_NAME` in env, rendered **only** on the locked
+  subscribe screen for a signed-in owner. Never on the landing page, never in an email.
+  Missing env → the screen shows the WhatsApp path only, and logs; it never renders a blank
+  account field.
+- Public footer: "Zidan Ferdiansyah, Kab. Bekasi, Jawa Barat", email, WhatsApp. No street, no
+  NPWP. `docs/landing-copy-id.md:61` drops the street line before that file is committed.
+
+### Removals (do not leave a half-wired gateway)
+`src/lib/midtrans.ts`, `src/lib/midtrans.test.ts`, `src/app/api/midtrans/`, `MIDTRANS_*` in
+`.env.example`, README mentions, and `demo.sh`'s notification-URL output. One payment module with
+one implementation (manual). No stub interface for a gateway we do not call.
+
+### Milestones after this ruling
+- **M2** = manual payment module + Super Admin console (verification queue, org deactivation,
+  Custom limit). Midtrans integration is gone from M2 and M9.
+- **M3** = berkas pages (in progress, unchanged).
+- **M9** = "local demo package": the client is walked through it on this machine or through a
+  Quick Tunnel, with the manual payment loop. VPS, domain, SSH deferred.
+
+## A21. Verification promise: "maksimal 1 hari kerja" (CEO, client-confirmed)
+
+- **One string, three places:** locked subscribe screen, FAQ, Terms — identical wording
+  ("maksimal 1 hari kerja"), plus one line: a payment sent on a Saturday, Sunday or national
+  holiday is processed by the end of the next working day. Designer writes it; nobody paraphrases.
+- **Working day = Monday–Friday, excluding national holidays.** The MVP does not compute a
+  holiday calendar: the copy states the rule, and nothing in the code counts working days.
+- **Queue order (M2):** `WAITING_VERIFICATION` sorted oldest first, so the payment closest to
+  breaking the promise is at the top. Show the submitted time (WIB) and its plain age ("2 hari
+  lalu"); no working-day arithmetic. No auto-refund, no auto-escalation — the promise is a human
+  commitment, the queue is its reminder.
+- **Breach = refund conversation**, so the queue exists before the copy ships. If the screen says
+  "maksimal 1 hari kerja" while there is no queue, the promise is unkeepable by construction.
+- Bank details live only in the build machine's `.env` (`BANK_NAME`, `BANK_ACCOUNT_NUMBER`,
+  `BANK_ACCOUNT_NAME`); `.env.example` keeps `0000000000`. Never in a commit, log, or thread.
