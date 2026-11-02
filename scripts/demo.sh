@@ -16,6 +16,12 @@ DB=biro_jasa_demo
 TUNNEL=${1:-}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
+# A public tunnel must never serve the default seed password: refuse before touching the database.
+if [ -n "$TUNNEL" ] && [ -z "${DEMO_PASSWORD:-}" ]; then
+  echo "DEMO_PASSWORD must be set when a tunnel URL is given." >&2
+  exit 1
+fi
+
 if [ ! -d "$DIR" ]; then
   mkdir -p "$DIR"
   "$PGBIN/initdb" -D "$DIR" -U postgres -A trust >/dev/null
