@@ -1,0 +1,339 @@
+# UI Strings — Bahasa Indonesia (Designer, single table)
+
+Source: Designer, Thread 6. Checked against repo at bdaa774.
+Rule: build verbatim. Changes need Designer approval in Thread 3.
+Spelling: always **SAMSAT**. Never "samas", never "free trial / gratis / uji coba" (except FAQ #2's refusal).
+Placeholders in `{braces}` are interpolated. Money always via `formatRupiah()`.
+
+---
+
+## 0. Global
+
+| Key | Where (current) | Indonesian |
+|---|---|---|
+| meta.title | layout.tsx:8 | Biro Jasa — Platform Manajemen Biro Jasa |
+| meta.description | layout.tsx:9 | Kelola operator, berkas, dan laporan keuangan biro jasa Anda dalam satu dashboard. |
+| common.genericError | all forms "An error occurred. Please try again." | Terjadi kesalahan. Silakan coba lagi. |
+| common.somethingWrong | "Something went wrong. Please try again." | Terjadi kesalahan. Silakan coba lagi. |
+| common.badJson | API "Request body must be valid JSON" | Permintaan tidak valid. |
+| common.invalidInput | API "Invalid input" | Data yang dikirim tidak valid. |
+| common.internal | API "Internal server error" | Terjadi kesalahan di server. Silakan coba lagi. |
+| common.notSignedIn | API "Not signed in" | Silakan masuk terlebih dahulu. |
+| common.empty | any "-" placeholder for a number | show the real value; `Rp 0` / `0` when there is no data. Never "-". |
+
+## 1. Validation (src/lib/validations.ts)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| v.emailRequired | Email is required | Email wajib diisi. |
+| v.emailInvalid | Invalid email address | Format email tidak valid. |
+| v.passwordRequired | Password is required | Password wajib diisi. |
+| v.passwordMin | Password must be at least 8 characters | Password minimal 8 karakter. |
+| v.passwordBlank | Password must not be blank | Password tidak boleh hanya spasi. |
+| v.nameRequired | Name is required | Nama wajib diisi. |
+| v.orgRequired | Organization name is required | Nama organisasi wajib diisi. |
+| v.tokenRequired | Reset token is required | Tautan reset tidak valid. |
+| v.passwordMismatch | Passwords do not match | Konfirmasi password tidak cocok. |
+| v.emailTaken | User with this email already exists | Email sudah terdaftar. |
+
+`isActive must be a boolean` is developer-only, never shown in UI: keep English.
+
+## 2. Login (/login)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| login.title | Login | Masuk |
+| login.desc | Sign in to your account | Masuk ke akun Anda. |
+| login.email | Email | Email |
+| login.password | Password | Password |
+| login.submit | Sign In | Masuk |
+| login.submitting | Signing in... | Memproses… |
+| login.invalid | Invalid email or password | Email atau password salah. |
+| login.forgot | Forgot password? | Lupa password? |
+| login.noAccount | (new, under button) | Belum punya akun? **Daftar** → /register |
+| login.resetDone | (banner after reset) | Password berhasil diubah. Silakan masuk. |
+
+## 3. Register (/register)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| reg.title | Create Account | Buat Akun |
+| reg.desc | **Start your free trial** ← CEO violation | Daftar untuk mulai mengelola biro jasa Anda. |
+| reg.name | Full Name | Nama Lengkap |
+| reg.email | Email | Email |
+| reg.password | Password | Password |
+| reg.passwordHelp | (new) | Minimal 8 karakter. |
+| reg.org | Organization Name | Nama Biro Jasa |
+| reg.orgHelp | (new) | Nama usaha yang akan tampil di dashboard dan dokumen. |
+| reg.submit | Create Account | Buat Akun |
+| reg.submitting | Creating account... | Membuat akun… |
+| reg.failed | Registration failed | Pendaftaran gagal. Silakan coba lagi. |
+| reg.success | Account created successfully | Akun berhasil dibuat. |
+| reg.slugRetry | Could not allocate an organization slug, please retry | Gagal membuat akun. Silakan coba lagi. |
+| reg.haveAccount | (new) | Sudah punya akun? **Masuk** → /login |
+
+## 4. Forgot password (/forgot-password)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| fp.title | Forgot password | Lupa Password |
+| fp.desc | We will send you a link… | Masukkan email Anda. Kami akan mengirim tautan untuk mengatur ulang password. |
+| fp.submit | Send reset link | Kirim Tautan |
+| fp.submitting | Sending... | Mengirim… |
+| fp.sent | If that email is registered, a reset link has been sent. | Jika email terdaftar, tautan reset telah dikirim. |
+| fp.back | (link) | Kembali ke Masuk |
+
+`fp.sent` must be identical for known and unknown emails (security, not style).
+
+## 5. Reset password (/reset-password)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| rp.title | Set a new password | Atur Ulang Password |
+| rp.desc | Choose a password of at least 8 characters | Buat password baru minimal 8 karakter. |
+| rp.new | (label) | Password Baru |
+| rp.confirm | (label) | Konfirmasi Password |
+| rp.submit | Set password | Simpan Password |
+| rp.submitting | Saving... | Menyimpan… |
+| rp.done | Password updated. You can now sign in. | Password berhasil diubah. Silakan masuk. |
+| rp.invalid.title | This link has expired | Tautan tidak valid atau sudah kedaluwarsa |
+| rp.invalid.desc | Reset links work once and expire after 60 minutes… | Tautan reset hanya bisa dipakai sekali dan berlaku 60 menit. Minta tautan baru dan gunakan email yang paling baru. |
+| rp.invalid.cta | Request a new link | Minta Tautan Baru |
+| rp.invalid.back | Back to sign in | Kembali ke Masuk |
+| rp.invalid.api | This reset link is invalid or has expired | Tautan tidak valid atau sudah kedaluwarsa. |
+
+## 6. Locked screen — no active subscription (A12)
+
+| Key | Indonesian |
+|---|---|
+| lock.title | Langganan Anda belum aktif |
+| lock.body | Pilih paket untuk mulai mencatat berkas dan mengelola operator. Data Anda tetap tersimpan dan bisa diekspor. |
+| lock.operatorNote | Operator tidak bisa login sampai langganan aktif. |
+| lock.cards | reuse `PricingCards` + existing CTA labels (Pilih Basic / Pilih Pro / Hubungi Kami). No new copy. |
+| lock.export | (only if export exists) Ekspor Data |
+| op.blocked (operator login attempt) | Akses ditutup karena langganan organisasi belum aktif. Hubungi owner Anda. |
+
+Lapsed and never-paid orgs see the same screen (A12). No "expired on {date}" variant in MVP.
+
+## 7. Checkout disclosure (A13)
+
+| Key | Indonesian |
+|---|---|
+| co.upgradeNote | Upgrade mulai berlaku hari ini dan batas operator langsung bertambah. Sisa hari paket Basic tidak dihitung prorata. |
+| co.renewNote | Perpanjangan dimulai setelah periode aktif Anda berakhir, jadi tidak ada hari yang hilang. |
+| co.downgradeRefused | Paket tidak bisa diturunkan selama Pro masih aktif. Pilih Basic setelah periode Pro berakhir. |
+| co.pay | Bayar {amount} |
+| co.pending | Menunggu konfirmasi pembayaran… |
+| co.success | Pembayaran berhasil. Paket {plan} aktif sampai {date}. |
+| co.failed | Pembayaran gagal atau dibatalkan. Silakan coba lagi. |
+
+Placement: `co.*Note` directly above the pay button, `text-sm`, `--muted-foreground`, no icon.
+
+## 8. Dashboard shell (sidebar.tsx)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| nav.ownerSubtitle | owner Dashboard | Dashboard Owner |
+| nav.operatorSubtitle | operator Dashboard | Dashboard Operator |
+| nav.dashboard | Dashboard | Beranda |
+| nav.operators | Operators | Operator |
+| nav.revenue | Revenue | Pendapatan |
+| nav.settings | Settings | Pengaturan |
+| nav.files | Files | Berkas |
+| nav.transactions | Transactions | Transaksi |
+| nav.logout | Logout | Keluar |
+
+Fix while here: role subtitle is built from `role.toLowerCase()` + CSS capitalize. Use the two keys above instead.
+
+## 9. Owner dashboard (/dashboard/owner)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| own.title | Owner Dashboard | Beranda |
+| own.welcome | Welcome, {name} | Selamat datang, {name} |
+| own.org | Organization: {org} | Biro jasa: {org} |
+| own.plan | (new) | Paket {plan} · aktif sampai {date} |
+| own.seats | Active Operators | Slot Operator |
+| own.seatsValue | {n} / {limit} | {n} / {limit} terpakai |
+| own.revenue | Total Revenue | Pendapatan Bulan Ini |
+| own.revenueHelp | (new, small under value) | Pembayaran pelanggan dikurangi biaya SAMSAT. Hanya berkas yang sudah diambil bulan ini yang dihitung. |
+| own.activeFiles | Active Files | Berkas Diproses |
+| own.revenueByOp | (new, M4/M5) | Pendapatan per Operator |
+| own.revenueByOp.empty | (new) | Belum ada berkas yang diambil bulan ini. |
+
+Revenue card shows the current calendar month (WIB). `own.revenueHelp` carries both halves of the claim so the client can check criterion #4 by eye: the calculation, which they can verify against a single file, and the timing, because the figure sums `File.revenue` for files whose `pickedUpAt` falls in that month (Asia/Jakarta). The timing sentence is what stops the card being read as cash received; dropping either half leaves a different misreading open.
+
+## 10. Add operator (operator-form.tsx)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| addop.title | Add operator | Tambah Operator |
+| addop.counter | (new, above form) | Slot operator: {used} / {limit} |
+| addop.name | Name | Nama |
+| addop.email | Email | Email |
+| addop.password | Initial password | Password Awal |
+| addop.passwordHelp | At least 8 characters. Share it with the operator… | Minimal 8 karakter. Bagikan ke operator; mereka bisa menggantinya nanti. |
+| addop.submit | Create operator | Tambah Operator |
+| addop.submitting | Creating... | Menyimpan… |
+| addop.success | {name} can now sign in with {email}. Give them… | {name} sudah bisa masuk dengan {email}. Berikan password yang baru Anda buat. |
+| addop.failed | Could not create the operator | Operator gagal ditambahkan. |
+| addop.limit | Your package has no operator seats left. Upgrade… | Slot operator paket Anda sudah penuh ({used}/{limit}). Upgrade paket atau nonaktifkan operator lain. |
+| addop.limitApi | Operator limit reached for your package | Slot operator paket Anda sudah penuh. |
+| addop.ownerOnly | Only an organization owner can add operators | Hanya owner yang bisa menambah operator. |
+| addop.ownerOnlyEdit | Only an organization owner can change operators | Hanya owner yang bisa mengubah operator. |
+| addop.notFound | Operator not found | Operator tidak ditemukan. |
+| addop.deactivate | (M3 list) | Nonaktifkan |
+| addop.activate | (M3 list) | Aktifkan |
+| addop.overLimit | (A14, over-limit org) | Jumlah operator aktif melebihi paket Anda ({n}/{limit}). Nonaktifkan operator sampai sesuai batas. |
+
+`addop.limit` alert: info style, not destructive. Amber text on white is not used (contrast); use `--foreground` text in a `--muted` box.
+
+## 11. Operator dashboard (/dashboard/operator)
+
+| Key | Current | Indonesian |
+|---|---|---|
+| opd.title | Operator Dashboard | Beranda |
+| opd.welcome | Welcome, {name} | Selamat datang, {name} |
+| opd.role | Role: {role} | remove — operator knows their role |
+| opd.myFiles | My Files | Berkas Saya |
+| opd.pending | Pending | Sedang Diproses |
+| opd.completed | Completed | Selesai |
+
+## 12. File status + service labels (M3/M4 — needed for criterion #3)
+
+| Enum | Indonesian | Badge |
+|---|---|---|
+| DRAFT | Draf | neutral (slate) |
+| DP_PAID | DP Diterima | neutral (indigo outline) |
+| ON_PROGRESS_SAMSAT | Diproses di SAMSAT | indigo |
+| COMPLETED_SAMSAT | Selesai di SAMSAT | emerald outline |
+| PICKED_UP | Sudah Diambil | emerald solid |
+| CANCELED | Dibatalkan | rose |
+
+| Enum | Indonesian |
+|---|---|
+| STNK | STNK |
+| PLAT | Ganti Plat |
+| MUTASI | Mutasi |
+| SIM_A / SIM_B / SIM_C | SIM A / SIM B / SIM C |
+
+Badges always carry the text label; color is never the only signal (WCAG 1.4.1).
+File form labels: see §12b (provisional, drafted from the schema). Empty states: §12a.
+
+### 12a. Empty states (lists)
+
+`common.empty` covers numbers only. Lists use these. Layout: centered in the list area, muted icon (lucide, `aria-hidden`), title `font-medium`, body `text-sm --muted-foreground`, optional button. No illustration.
+
+| Key | Where | Title | Body | Action |
+|---|---|---|---|---|
+| empty.myFiles | Operator · Berkas Saya | Belum ada berkas | Berkas yang Anda input akan muncul di sini. | Input Berkas (primary) |
+| empty.myFiles.filtered | Operator · Berkas Saya, filter active | Tidak ada berkas yang cocok | Ubah atau reset filter untuk melihat berkas lain. | Reset Filter (outline) |
+| empty.ownerFiles | Owner · Berkas | Belum ada berkas | Berkas yang diinput operator akan muncul di sini. | — |
+| empty.operators | Owner · Operator | Belum ada operator | Tambahkan operator agar mereka bisa menginput berkas. Jika Anda mengerjakan sendiri, akun owner sudah cukup. | Tambah Operator (primary) |
+| empty.operators.full | Owner · Operator, no seat left and none active | Belum ada operator | Slot operator paket Anda sedang dipakai akun owner. Upgrade paket untuk menambah operator. | — |
+| empty.revenueByOp | Owner · Pendapatan per Operator | Belum ada pendapatan bulan ini | Pendapatan dihitung saat berkas berstatus Sudah Diambil. | — |
+
+Rules: the action button only renders if its route exists (A16 no dead links). `Input Berkas` and the owner Berkas list arrive with M3; until then the operator list shows the empty state without a button.
+
+### 12b. File form (M3) — labels from the current schema, provisional
+
+Draft taken from `prisma/schema.prisma` (`model File`) so M3 does not wait on a round trip. Developer: if the M3 field list differs, the difference is additive — send it and the extra labels come back same day. Grouping and order below are the design; do not reorder.
+
+**Section: Data Pelanggan**
+
+| Key | Label | Helper / error |
+|---|---|---|
+| file.customerName | Nama Pelanggan | error: Nama pelanggan wajib diisi. |
+| file.customerKtp | NIK KTP | helper: 16 angka, sesuai KTP. error: NIK harus 16 angka. |
+| file.vehicleNumber | Nomor Kendaraan | helper: Contoh: B 1234 XYZ. error: Nomor kendaraan wajib diisi. |
+| file.ownershipType | Jenis Kepemilikan | select (enum `OwnershipType`, A17): `PERORANGAN` → Perorangan, `BADAN_USAHA` → Badan Usaha. Default Perorangan. Provisional on CEO; a new value needs one more label, nothing else. |
+| file.serviceType | Jenis Layanan | options from §12 (STNK, Ganti Plat, Mutasi, SIM A, SIM B, SIM C) |
+| file.notes | Catatan | placeholder: Opsional |
+
+**Section: Biaya**
+
+| Key | Label | Helper / error |
+|---|---|---|
+| file.estimatedPrice | Estimasi Biaya | helper: Angka saja, tanpa titik. Contoh: 1500000 |
+| file.dpAmount | DP Diterima | helper: Biasanya 50% dari estimasi. Isi 0 jika belum ada DP. |
+| file.finalPrice | Total Dibayar Pelanggan | helper: Diisi saat berkas selesai. |
+| file.samsatPayment | Biaya SAMSAT | helper: Biaya yang dibayarkan ke SAMSAT. |
+| file.serviceFee | Jasa Anda | read-only, computed: Total Dibayar Pelanggan − Biaya SAMSAT. Never editable (A1). |
+| file.moneyError | — | error: Masukkan angka tanpa titik atau koma. |
+
+**Status and dates**
+
+| Key | Label | Note |
+|---|---|---|
+| file.status | Status | select, values from §12; transitions per TDD |
+| file.pickedUpAt | Diambil pada | read-only, set automatically when status becomes Sudah Diambil (A16). Never a form field. |
+| file.createdAt | Diinput pada | read-only |
+
+**Actions**
+
+| Key | Indonesian |
+|---|---|
+| file.submit | Simpan Berkas |
+| file.update | Simpan Perubahan |
+| file.submitting | Menyimpan… |
+| file.cancel | Batal |
+| file.saved | Berkas berhasil disimpan. |
+| file.updated | Perubahan berkas disimpan. |
+| file.failed | Berkas gagal disimpan. Silakan coba lagi. |
+| file.confirmLeave | Isian belum disimpan. Yakin ingin meninggalkan halaman ini? |
+| file.statusChanged | Status berkas diubah menjadi {status}. |
+| file.pickupGuard | Total dibayar pelanggan harus diisi dan tidak boleh lebih kecil dari biaya SAMSAT. |
+| file.terminalNote | Berkas yang sudah diambil atau dibatalkan tidak bisa diubah statusnya lagi. |
+| file.cancelStatus | Batalkan berkas |
+| file.cancelConfirm | Batalkan berkas ini? Berkas yang dibatalkan tidak dihitung dalam pendapatan dan tidak bisa dikembalikan ke status sebelumnya. |
+| file.cancelConfirmYes | Ya, Batalkan |
+| file.cancelConfirmNo | Tidak |
+| file.cancelled | Berkas dibatalkan. |
+
+**Sensitive-data display rule**
+
+`customerKtp` is KTP data. In any list or table it renders masked: `••••••••••••` + last 4 digits. The full value appears on the detail/edit screen the operator is working on, and nowhere else in the UI.
+
+Exceptions, per A17 — these are not oversights:
+- **Owner export contains the full KTP.** The data is the owner's, and handing it back to them is what export is for (A12). Masking it there would break the export's only purpose. Owner-only; operators have no export path at all.
+- **Logs never contain it.** Not masked — absent.
+- **Surat Jalan: masked for now, pending the CEO.** It is printed for the customer, whose own KTP it is, so masking may be pointless there; but that is a client decision, not a design one. If the CEO says it carries the NIK, the field prints unmasked and nothing else changes.
+
+**No delete (§12c)**
+
+There is no delete action on a file, in any screen. A file is cancelled through its status (`CANCELED`), which keeps the row and its history. Two reasons: deleting a row destroys the revenue attached to it (BUG-12 from the UI side), and a cancelled job that visibly exists is information the owner needs when a customer comes back.
+
+Wording matters here. The action is "Batalkan", never "Hapus". A user who wants to remove a mistake will look for "Hapus" and should not find it.
+
+For the same reason the filtered-empty state says "Reset Filter", not "Hapus Filter": the word "Hapus" appears nowhere in the product, so it cannot train a user to expect a delete that does not exist.
+
+Cancel is confirmed (§12b, `file.cancelConfirm`) because `CANCELED` is terminal (A17). The dialog states that consequence instead of asking "are you sure".
+
+**Table headers (owner + operator file lists)**
+
+| Key | Indonesian |
+|---|---|
+| th.customer | Pelanggan |
+| th.vehicle | Kendaraan |
+| th.service | Layanan |
+| th.status | Status |
+| th.revenue | Jasa |
+| th.operator | Operator |
+| th.date | Tanggal |
+| th.actions | — (single icon button, `aria-label`: Ubah. **No delete. Files are cancelled, not deleted** — see §12c) |
+
+
+## 13. Landing (closes M7)
+
+| Key | Indonesian |
+|---|---|
+| feat3.title | Laporan Keuangan Otomatis |
+| feat3.body | Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, dan sisanya adalah jasa Anda. |
+| faq.heading | Pertanyaan yang Sering Diajukan |
+| faq3.q | Berapa operator yang bisa saya tambahkan? |
+| faq3.a | Basic mendukung 1 operator dan Pro 3 operator. Jika Anda ikut mengerjakan berkas, akun owner memakai satu slot. Butuh lebih banyak? Ajukan paket Custom lewat Hubungi Kami. |
+| pricing.seatNote | Slot operator sudah termasuk akun owner jika Anda ikut mengerjakan berkas. |
+
+Order: feat3 goes back in position 3; FAQ #3 goes back in position 3. Features = 6, FAQ = 6.
+`pricing.seatNote` sits under the caption "Harga dalam Rupiah. Ditagih bulanan.", same style.
+Tests in src/lib/m1.test.ts that assert 5 features / 5 FAQ items must flip to 6 in the same commit.

@@ -148,7 +148,9 @@ Watch the schema default `operatorLimit @default(1)`: registration must write `0
 
 ## A15. Demo database, tunnel and off-box backups (Researcher ruling, PM-accepted)
 
-**Database.** Demo: local PostgreSQL 17.11 on the demo machine (localhost-only, port 5432),
+**Database.** Demo: project-owned PostgreSQL 17 cluster on the demo machine
+(`~/.local/share/biro-jasa/demo-pg`, localhost-only, port **5433**; the system cluster on 5432
+is peer-auth only and not ours to touch),
 disposable — drop, `prisma migrate deploy`, reseed per run. Production: PostgreSQL **17** on the
 client VPS (install from the PGDG apt repository if the distro ships older). **Neon is dropped
 entirely** — no URL in `.env.example`, no code path, no "optional sandbox".
@@ -173,3 +175,74 @@ entirely** — no URL in `.env.example`, no code path, no "optional sandbox".
 - Before launch: one real restore of a downloaded dump onto a clean PostgreSQL 17, timed, logged.
 - The single box means app and database fail together. The off-box dump is the only copy that
   survives the VPS; it is not optional.
+
+## A16. UI strings and display rules (Designer's `docs/ui-strings-id.md`)
+
+`docs/ui-strings-id.md` is the single source of Indonesian UI copy and the repo copy is
+authoritative. Build verbatim; new copy needs Designer approval through the PM.
+
+Hard display rules:
+- **No "-" placeholders.** `Rp 0` / `0` when there is no data. A dash on the revenue card
+  reads as a missing feature.
+- **No dead links.** Sidebar shows only routes that exist. Until M3/M4 build them, the owner
+  sidebar is `Beranda` alone and the operator sidebar is `Beranda` alone. Raise a real
+  `not-found.tsx` ("Halaman belum tersedia") instead of the framework default.
+- **A `null` operator limit** — render `Sesuai kesepakatan` and hide the
+  counter and the over-limit alert; never `1 / null`.
+- **No `Role: OPERATOR`.** Operators know their role; raw enums never reach the screen.
+- Status badges always carry text; colour is never the only signal.
+- Hardcoded Indonesian prose stays out of components: strings live in `src/lib/`, per the M7
+  precedent, so Designer/QA can diff them.
+
+Revenue reporting (needed for criteria #4 and #5):
+- **`File.pickedUpAt DateTime?` is required in M3**, set when status becomes `PICKED_UP`;
+  `completedAt` may be added the same way later. `File` currently has only `createdAt` /
+  `updatedAt`, so "this month" cannot be computed without it.
+- "Pendapatan Bulan Ini" = sum of `File.revenue` for files with `pickedUpAt` inside the current
+  calendar month in **Asia/Jakarta**, cached field, owner org only. It is job-completion
+  revenue, not cash receipts; the label must not promise cash.
+- `TransactionType.SERVICE_FEE` is never created — the service fee *is* the revenue (A1).
+  A `SERVICE_FEE` row would double-count it.
+
+English is allowed only in developer-facing messages that no user can reach (e.g.
+`isActive must be a boolean`).
+
+## A17. File (berkas) rules for M3 — from Designer §12a/§12b
+
+- **`ownershipType` becomes a Prisma enum `OwnershipType { PERORANGAN, BADAN_USAHA }`**
+  (migration converts the existing `String`; seed only holds `PERORANGAN`). Provisional: CEO to
+  confirm with the client whether other ownership types occur (e.g. instansi). Adding a value
+  later is an additive `ALTER TYPE … ADD VALUE`. Rendered as a select, never free text.
+- **Server computes money, never trusts the body:** `serviceFee = revenue = finalPrice −
+  samsatPayment`, computed on save; any `serviceFee`/`revenue`/`pickedUpAt` in the request is
+  ignored.
+- **`PICKED_UP` requires `finalPrice` and `samsatPayment` set** and `finalPrice ≥ samsatPayment`.
+  The server sets `pickedUpAt = now()` on that transition.
+- **`PICKED_UP` and `CANCELED` are terminal in the MVP.** No backward transitions, so
+  `pickedUpAt` can never be moved and monthly revenue can never be backdated. Owner-side
+  correction is post-MVP.
+- **Files are never deleted.** No "Hapus" action on files; cancelling is status `CANCELED`.
+  Revenue history is protected the same way as BUG-12.
+- **KTP (`customerKtp`) stays a `String`** (16 digits, leading zeros). Masked
+  (`••••••••••••` + last 4) in every list/table and every log line; full value only on the
+  detail/edit screen.
+- **Owner data export (A12) contains the full KTP:** it is the owner's own data, and handing it
+  back is the point of export. Export is owner-only and is not available to operators.
+- **Surat Jalan PDF:** masked KTP unless the client confirms the printed document needs the
+  full number (question to CEO).
+
+## A18. Refunds and stale orders (PM, from QA pass at 1867bd7)
+
+- **A refund ends the access it paid for (BUG-17).** On a `REFUNDED` notification, the
+  Subscription created by that payment becomes `CANCELED` with `currentPeriodEnd = now`, and the
+  organization's `operatorLimit` follows A12 (0 if nothing else is active). This needs a link:
+  `Subscription.subscriptionPaymentId String? @unique`. Refunds stay manual in the Midtrans
+  dashboard; the system only reacts. Ceiling: refund of an upgrade drops the org to the locked
+  state rather than restoring Basic — acceptable, because CEO policy only refunds within 7 days
+  with no file recorded.
+- **The webhook re-applies `checkoutRefusal()` against the current active subscription.** A Basic
+  order created before a Pro upgrade and paid later must not downgrade the org. If refused: mark
+  the payment `PAID`, change no subscription, log it for a manual refund.
+- **Bug numbers are assigned by the PM only.** QA's "BUG-14 (Low)" from the 1867bd7 pass is
+  **BUG-16**: re-activating an already-active operator returns 403 at the limit; must return 200
+  with no seat claim. Fix with M3.

@@ -25,8 +25,7 @@ Section title: Semua yang Anda Butuhkan untuk Operasional
 
 1. Manajemen Operator — Tambah dan kelola operator sesuai kapasitas paket Anda. Setiap operator punya akses sendiri.
 2. Pelacakan Berkas — Pantau status setiap berkas dari masuk hingga selesai, lengkap dengan riwayat perubahannya.
-3. Laporan Keuangan Otomatis — ⚠ PENDING DESIGNER WORDING. Old line ("…dikurangi pembayaran samas dan biaya layanan.") is WRONG and must not ship.
-   CEO ruling (b): revenue = pembayaran pelanggan − biaya SAMSAT = biaya jasa. Required meaning: "Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, yaitu jasa Anda." Designer writes final wording; spelling is always SAMSAT.
+3. Laporan Keuangan Otomatis — RESOLVED by Designer (`docs/ui-strings-id.md` feat3): "Pendapatan dihitung otomatis: pembayaran pelanggan dikurangi biaya SAMSAT, dan sisanya adalah jasa Anda." Build from that file; this line is superseded. Spelling is always SAMSAT.
 4. Pembayaran Online — Langganan dibayar lewat Midtrans. Paket aktif otomatis begitu pembayaran berhasil.
 5. Hak Akses Owner & Operator — Owner melihat seluruh data. Operator hanya melihat berkas yang ditugaskan kepadanya.
 6. Ekspor PDF & Excel — Unduh laporan harian, bulanan, atau rentang tanggal dalam format PDF dan Excel.
@@ -43,8 +42,7 @@ Source of truth for values: `src/lib/plans.ts`. Never hardcode a price in JSX.
 ## FAQ (accordion, 6 items)
 1. Berapa lama proses aktivasi setelah pembayaran? — Langsung. Setelah Midtrans mengonfirmasi pembayaran, paket Anda aktif otomatis.
 2. Apakah ada masa uji coba gratis? — Tidak. Paket langsung aktif setelah pembayaran pertama.
-3. Berapa operator yang bisa saya tambahkan? — Basic mendukung 1 operator, Pro 3 operator. Butuh lebih banyak? Ajukan paket Custom lewat Hubungi Kami.
-   ⚠ PENDING DESIGNER REVISION: CEO seat rule (owner operating consumes a seat) makes this answer incomplete. Do not ship FAQ #3 until Designer re-issues it.
+3. Berapa operator yang bisa saya tambahkan? — RESOLVED by Designer (`docs/ui-strings-id.md` faq3): "Basic mendukung 1 operator dan Pro 3 operator. Jika Anda ikut mengerjakan berkas, akun owner memakai satu slot. Butuh lebih banyak? Ajukan paket Custom lewat Hubungi Kami." Plus `pricing.seatNote` under the pricing caption.
 4. Bisakah saya upgrade dari Basic ke Pro? — Bisa. Upgrade diproses sebagai pembayaran baru dan batas operator langsung bertambah. Sisa periode Basic tidak dihitung prorata.
 5. Apakah data saya aman? — Data setiap organisasi dipisahkan di level database, dan setiap akses difilter berdasarkan peran pengguna.
 6. Format laporan apa yang tersedia? — PDF dan Excel, untuk laporan harian, bulanan, atau rentang tanggal pilihan Anda.
