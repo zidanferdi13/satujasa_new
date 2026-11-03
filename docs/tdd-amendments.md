@@ -402,3 +402,76 @@ is Developer's change; a stale `UI.lock.*` reference fails typecheck, which is t
 **One open payment per organization.** Pressing "Ganti paket" while a payment is `UNPAID` replaces
 that row in place — same payment code, new plan, no second row. `WAITING_VERIFICATION` cannot be
 changed: verify or reject it first. This keeps the transfer note unambiguous for the verifier.
+
+## A24. Owner works by holding a seat; legal copy gates (CEO 2026-11-02)
+
+**Seats.** `operatorLimit` counts `Operator` rows with `isActive = true`. The owner who works
+holds one of those rows. Basic therefore yields **one worker total**, owner or staff, never both.
+Provisioning is the system's job: on activation, an idempotent step creates the owner's `Operator`
+row (same transaction as the subscription, `memberId` = the owner's member, `email` = owner email),
+so a freshly activated Basic organization can record a berkas without anyone freeing a seat first.
+
+**Permission follows the seat, not the role.** Creating or editing a berkas requires an active
+`Operator` row belonging to the session user. `POST /api/files` and `PATCH /api/files/[id]` must
+check that row, not `MemberRole`. An owner whose row is inactive is read-only: they still list and
+open files (viewing reports never costs a seat) and the edit action is unavailable. The owner may
+deactivate their own row to hand the seat to staff; that is the supported hand-off, and it is why
+the write guard cannot be a role check.
+
+**Attribution.** `File.operatorId` stays non-null. The owner's berkas point at the owner's own
+`Operator` row, so M4 revenue attribution needs no change.
+
+**Downgrade.** The owner chooses which rows keep seats; the owner keeps theirs if they work.
+
+**Legal copy.** `docs/legal-id.md` is the CEO-approved source for `/kebijakan-privasi` and
+`/syarat-ketentuan`. Both pages are built in M5, linked from the footer and asserted in the
+register flow, and must exist before the first paying customer. Placement is verbatim; the
+`[BLOCKED]` bullet in §1.4 does not ship until `scripts/delete-org-data.ts` exists.
+
+**Claims in the legal copy that the code must satisfy before those pages ship** (A11: no claim
+without implementation):
+- §1.1 lists "nomor WhatsApp" as collected account data. No such column exists; either add it to
+  registration or delete the item.
+- §1.4 promises 12 months of retention after the subscription ends. Nothing prunes or preserves on
+  that schedule; reword to what the system does, or implement it.
+- §1.6 says each organization's data is separated "di tingkat basis data". There is no row-level
+  security in the migrations; the true statement today is per-request scoping in the server layer,
+  plus the RLS A20 asks for. Do not publish the database-level claim before RLS is applied.
+- §1.6 also describes encrypted daily backups. `scripts/backup.sh` does not exist (A22); the
+  sentence ships only once it runs on the VPS.
+- §2.4 step 4 is a paraphrase of the promise, not the promise. It must render `promise.core` and
+  `promise.weekend` by import, like the other two locations.
+- One WhatsApp number constant for the whole product: the legal identity block shows
+  0813-1953-5441 while the landing page uses 081319535441.
+
+**Resolved by CEO (legal-id.md v2, 2026-11-02):** WhatsApp number removed from §1.1; retention
+reworded to "while active, then until deletion is requested"; the database-level sentence is held
+until RLS is applied; backup claim kept, and both legal pages go public only after
+`scripts/backup.sh` has run once (gates production, not the local demo); §2.4 step 4 imports the
+promise keys. Canonical number `081319535441`, `wa.me` uses `6281319535441`.
+
+## A25. Subscription lifecycle: `SUPERSEDED` means replaced by an upgrade (PM 2026-11-02)
+
+`SubscriptionStatus` gains `SUPERSEDED` in its own additive migration
+(`9_subscription_superseded`, `ALTER TYPE ... ADD VALUE` only, no data statement), matching how
+migration 7 added the ownership values. PG cannot use a new enum value in the transaction that
+adds it, so the value is referenced by application code only, never by migration SQL.
+
+| Transition | Prior row | New row |
+|---|---|---|
+| Renewal (same plan) | extended in place, `ACTIVE` | none |
+| Upgrade | `ACTIVE` → `SUPERSEDED` | one `ACTIVE` row |
+| Downgrade at period end | `ACTIVE` → `CANCELED` | one `ACTIVE` row |
+| Verification of a lapsed org | none/`UNPAID` untouched | one `ACTIVE` row |
+
+`Subscription_one_active_per_org` (partial unique on `status = 'ACTIVE'`, migration 4) is checked at
+insert, so the prior `ACTIVE` row is closed **before** the new one is inserted, in that order, inside
+the verification transaction.
+
+`CANCELED` stays reserved for customer-initiated termination. Retention reporting excludes
+`CANCELED`, `SUPERSEDED` and `UNPAID` from "active"; churn counts `CANCELED` only. An upgrade is
+retained revenue, not churn, and M4 must not blur the two.
+
+**Demo data:** the seeded organization is PRO (limit 3) with a Rp249.000 PRO payment, because A5/A24
+give Basic one worker total and the demo needs an owner plus a staff operator. Demo data only; prices
+are unchanged.

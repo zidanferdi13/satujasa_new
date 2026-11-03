@@ -309,6 +309,27 @@ There is no delete action on a file, in any screen. A file is cancelled through 
 
 Wording matters here. The action is "Batalkan", never "Hapus". A user who wants to remove a mistake will look for "Hapus" and should not find it.
 
+### 12d. Seatless owner — read-only (A24)
+
+An owner without an active `Operator` row can read everything and change nothing. The seat is the permission, not the role, so this state is normal operation (the owner handed the seat to staff), not an error and not a degraded account.
+
+**One banner, two placements.** Same key, same words, rendered above the list on Owner · Berkas and above the form on Ubah Berkas:
+
+| Key | Indonesian |
+|---|---|
+| seat.readOnly | Anda tidak memegang slot operator, jadi berkas hanya bisa dilihat. Aktifkan slot Anda untuk mulai mengubah berkas lagi — jika semua slot terpakai, nonaktifkan operator lain lebih dulu. |
+| seat.reactivate | Aktifkan Slot Saya |
+| seat.reactivateOk | Slot Anda aktif. Anda bisa mengubah berkas lagi. |
+| seat.reactivateFull | Semua slot sedang terpakai. Nonaktifkan operator lain lebih dulu, lalu aktifkan slot Anda. |
+
+Rules:
+- **Persistent, not a toast.** This is a standing state that survives reload; a notification would vanish and leave the owner wondering why Ubah is gone.
+- **The action is absent, not disabled.** On Ubah Berkas a greyed "Simpan" reads as a broken page; no button plus the banner reads as a cause. The fields stay readable — hiding the data would punish the owner for a seat decision they made deliberately.
+- **Row action "Ubah" is not rendered** in the owner file list while seatless. Tapping into a record the user cannot save is a dead end.
+- **`seat.reactivate` sits in the banner**, never in a toast or a modal. One click, and `seat.reactivateFull` explains the one case where it fails.
+- Style: `--muted` box, `--foreground` text, `aria-live="polite"` so a failed reactivation is announced. Not `--destructive`: nothing is broken.
+- **Distinct from `addop.overLimit`** (organization over its package limit after a downgrade) and from the locked screen (no active subscription). Three different causes, three different sentences; collapsing them would send the owner to the wrong fix.
+
 For the same reason the filtered-empty state says "Reset Filter", not "Hapus Filter": the word "Hapus" appears nowhere in the product, so it cannot train a user to expect a delete that does not exist.
 
 Cancel is confirmed (§12b, `file.cancelConfirm`) because `CANCELED` is terminal (A17). The dialog states that consequence instead of asking "are you sure".
@@ -368,7 +389,7 @@ Counted in working days, Monday–Friday, excluding national holidays. **The app
 Where they appear:
 1. **Locked/subscribe screen** — directly under the heading, before the plan cards.
 2. **Landing FAQ #1** — `{promise.core} {promise.weekend}`, in that order, one paragraph.
-3. **`/syarat-ketentuan`** — same two keys in the payment section. The page does not exist yet (A11); when it ships it imports these keys, it does not retype them.
+3. **`/syarat-ketentuan`** — §2.4 step 4 of `docs/legal-id.md` (CEO v2) is `{promise.core} {promise.weekend}` and nothing else, rendered by import. Same bytes as the other two locations by construction.
 
 Why the Monday example is in the sentence: "maksimal 1 hari kerja" is ambiguous for a Friday-night transfer, and the customer will read it as "Saturday". The example removes the reading without adding a second promise. There is exactly one promise in the product — no "biasanya lebih cepat", no "segera", no percentage. If verification starts beating the promise routinely, the promise is still the promise.
 
@@ -547,3 +568,29 @@ The enum has four values (A17, closed by A23). Four places render it, and all fo
 | filter.all | Semua |
 
 Order is the same everywhere: enum order, most common first. Filter puts "Semua" first because it is the reset state. "Pemerintah" is the CEO's term — not "Instansi", which must not appear as a label anywhere.
+
+## 18. Legal pages — `/kebijakan-privasi`, `/syarat-ketentuan` (A24, M5)
+
+Source: `docs/legal-id.md` (CEO v2). **Placed verbatim.** Designer specifies layout only; no word in that file is edited by Designer or Developer.
+
+| Key | Indonesian |
+|---|---|
+| legal.privacyTitle | Kebijakan Privasi |
+| legal.termsTitle | Syarat & Ketentuan |
+| legal.updated | Berlaku sejak {date} |
+| footer.privacy | Kebijakan Privasi |
+| footer.terms | Syarat & Ketentuan |
+| reg.legalAgree | Dengan mendaftar, Anda menyetujui {Syarat & Ketentuan} dan {Kebijakan Privasi}. |
+
+Layout:
+- Public pages, landing header + footer, single column `max-w-prose`, body `text-base`, line height 1.7. Headings follow the file's numbering (1.1, 2.4 …) so a support reply can cite "lihat 2.4".
+- Identity line at the top of both pages, exactly this and nothing else:
+
+  > Zidan Ferdiansyah · Kab. Bekasi, Jawa Barat · zidanferdi13@gmail.com · WhatsApp 081319535441
+
+  Only block-quoted text in `legal-id.md` is rendered copy. Every unquoted sentence in that file — the "no street address, no NPWP" rules, the canonical-format note, the build notes — is an instruction to us and never reaches the page. Pasting a section wholesale would publish those instructions to the public, which is the one way this placement goes wrong.
+- §2.4 is a numbered list; step 4 = `{promise.core} {promise.weekend}` by import.
+- **[BLOCKED] items are not rendered** — not greyed, not "segera hadir". Absent until their script exists.
+- `legal.updated` comes from one constant per page; the file has no version archive (§1.7), so the date is the only change signal.
+- `reg.legalAgree`: under the register button, `text-sm --muted-foreground`, both links open in a new tab so the half-filled form survives. Statement, not a checkbox; the page already states agreement on submit.
+- Footer links render only once the pages ship (A16 no dead links). Both pages go public only after `scripts/backup.sh` has run once (legal-id.md build notes).

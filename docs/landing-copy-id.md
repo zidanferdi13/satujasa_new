@@ -54,7 +54,7 @@ Source of truth for values: `src/lib/plans.ts`. Never hardcode a price in JSX.
 - Produk: Fitur, Harga, FAQ  (in-page anchors `#fitur`, `#harga`, `#faq` — these exist)
 - Perusahaan, Bantuan, Legal columns: **OMITTED for MVP** until real destinations exist (PM + CEO ruling). Do not reserve space, do not grey out.
   - Kontak / Hubungi Kami → added when the WhatsApp number arrives.
-  - Kebijakan Privasi / Syarat & Ketentuan → added when CEO-drafted legal content exists; required before launch (A11).
+  - Kebijakan Privasi / Syarat & Ketentuan → content in `docs/legal-id.md` (CEO v2), layout in `docs/ui-strings-id.md` §18. Links render once the pages ship (M5, after `scripts/backup.sh` has run).
   - Tentang, Panduan → no content owner; dropped from MVP.
 - Business identity block:
   - Zidan Ferdiansyah
