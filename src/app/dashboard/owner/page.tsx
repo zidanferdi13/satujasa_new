@@ -19,8 +19,15 @@ export default async function OwnerDashboardPage() {
   // A19/§15: that screen lives at one route, so the locked dashboard does not duplicate its cards.
   if (!status || !status.entitled) redirect("/dashboard/subscription");
 
-  const { organization, subscription, activeOperators, activeFiles, revenueThisMonth, overLimit } =
-    status;
+  const {
+    organization,
+    subscription,
+    activeOperators,
+    activeFiles,
+    revenueThisMonth,
+    revenueByOperator,
+    overLimit,
+  } = status;
   // A16: a null limit is CUSTOM ("Sesuai kesepakatan"); never render "1 / null".
   const operatorLimit: number | null = organization.operatorLimit;
   const seatIsFull = operatorLimit === null ? false : !canAddOperator(activeOperators, operatorLimit);
@@ -67,6 +74,29 @@ export default async function OwnerDashboardPage() {
             <h3 className="text-lg font-medium">{UI.own.activeFiles}</h3>
             <p className="text-3xl font-bold mt-2">{activeFiles}</p>
           </div>
+        </div>
+
+        {/* Item 5: the same sum as the card above, split by operator. The owner appears here like
+            any operator when they hold a seat and pick files up themselves. */}
+        <div className="p-6 border rounded-lg">
+          <h2 className="text-xl font-semibold mb-1">{UI.own.revenueByOp}</h2>
+          <p className="text-xs text-muted-foreground mb-4">{UI.own.revenueHelp}</p>
+          {revenueByOperator.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{UI.own.revenueByOpEmpty}</p>
+          ) : (
+            <ul className="divide-y">
+              {revenueByOperator.map((row) => (
+                <li key={row.operatorId} className="flex items-baseline justify-between py-2">
+                  <span>{row.operatorName}</span>
+                  <span className="font-medium">{formatRupiah(row.revenue)}</span>
+                </li>
+              ))}
+              <li className="flex items-baseline justify-between py-2 border-t font-semibold">
+                <span>{UI.own.revenue}</span>
+                <span>{formatRupiah(revenueThisMonth)}</span>
+              </li>
+            </ul>
+          )}
         </div>
 
         <div className="p-6 border rounded-lg max-w-md">

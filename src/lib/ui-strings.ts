@@ -254,6 +254,10 @@ export const UI = {
     revenueHelp:
       "Pembayaran pelanggan dikurangi biaya SAMSAT. Hanya berkas yang sudah diambil bulan ini yang dihitung.",
     activeFiles: "Berkas Diproses",
+    // §9: the same sum as the card above, split by operator. The owner's own berkas are a row
+    // like any other — they may hold a seat, so their work is not a separate total.
+    revenueByOp: "Pendapatan per Operator",
+    revenueByOpEmpty: "Belum ada berkas yang diambil bulan ini.",
   },
 
   addop: {

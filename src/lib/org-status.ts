@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { isOverOperatorLimit, operatorMaySignIn, subscriptionIsActive } from "@/lib/entitlement";
 import { jakartaMonthRange } from "@/lib/file-rules";
 import { ACTIVE_FILE_STATUSES } from "@/lib/file-rules";
+import { revenueByOperator, type OperatorTotal } from "@/lib/revenue";
 
 export type OrganizationStatus = {
   organization: { id: string; name: string; slug: string; operatorLimit: number };
@@ -18,6 +19,8 @@ export type OrganizationStatus = {
   activeFiles: number;
   fileCount: number;
   revenueThisMonth: number;
+  /** Item 5: the same sum, split by operator, the owner's own berkas included. */
+  revenueByOperator: OperatorTotal[];
 };
 
 const subscriptionSelect = { package: true, status: true, currentPeriodEnd: true } as const;
@@ -37,7 +40,7 @@ export async function loadOrganizationStatus(
   if (!organization) return null;
 
   const range = jakartaMonthRange();
-  const [subscription, activeOperators, activeFiles, fileCount, revenue] = await Promise.all([
+  const [subscription, activeOperators, activeFiles, fileCount, byOperatorRows] = await Promise.all([
     prisma.subscription.findFirst({
       where: { organizationId },
       orderBy: { createdAt: "desc" },
@@ -48,15 +51,32 @@ export async function loadOrganizationStatus(
       where: { organizationId, status: { in: [...ACTIVE_FILE_STATUSES] } },
     }),
     prisma.file.count({ where: { organizationId } }),
-    prisma.file.aggregate({
-      _sum: { revenue: true },
+    // One grouped read feeds both the card and the per-operator table: the total is the sum of
+    // the rows below it, so the two figures cannot disagree.
+    prisma.file.groupBy({
+      by: ["operatorId"],
       where: {
         organizationId,
         status: "PICKED_UP",
         pickedUpAt: { gte: range.start, lt: range.end },
       },
+      _sum: { revenue: true },
     }),
   ]);
+
+  const operatorNames = byOperatorRows.length
+    ? await prisma.operator.findMany({
+        where: { id: { in: byOperatorRows.map((row) => row.operatorId) } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const report = revenueByOperator(
+    byOperatorRows.map((row) => ({
+      operatorId: row.operatorId,
+      operatorName: operatorNames.find((operator) => operator.id === row.operatorId)?.name ?? "",
+      revenue: row._sum.revenue,
+    }))
+  );
 
   return {
     organization,
@@ -68,7 +88,8 @@ export async function loadOrganizationStatus(
     activeOperators,
     activeFiles,
     fileCount,
-    revenueThisMonth: revenue._sum.revenue ?? 0,
+    revenueThisMonth: report.total.revenue,
+    revenueByOperator: report.byOperator,
   };
 }
 

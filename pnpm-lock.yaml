@@ -75,6 +75,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.43
+      '@types/pdfkit':
+        specifier: ^0.17.7
+        version: 0.17.7
       '@types/react':
         specifier: ^19
         version: 19.3.0
@@ -757,6 +760,9 @@ packages:
 
   '@types/node@20.19.43':
     resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
+
+  '@types/pdfkit@0.17.7':
+    resolution: {integrity: sha512-VMOZDWw7HtNtLbjIuHIhVArm9PlV0gxpz32jAl1IuXWlIgbr1lKFoTsrtvEzY8a9BIpQJEE5DwNPKD50otTs6g==}
 
   '@types/react-dom@19.3.0':
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
@@ -3057,6 +3063,10 @@ snapshots:
   '@types/node@20.19.43':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/pdfkit@0.17.7':
+    dependencies:
+      '@types/node': 20.19.43
 
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
