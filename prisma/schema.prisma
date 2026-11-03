@@ -18,6 +18,9 @@ model User {
   // Set when the password changes. Sessions issued before this moment are rejected,
   // so a stolen session does not survive a password reset (BUG-09).
   passwordChangedAt DateTime?
+  // A20: platform staff, never a tenant role. A Super Admin has no Member row and no
+  // organizationId, so the tenant routes' role gate excludes them by construction.
+  platformRole  PlatformRole?
 
   // Relations
   memberships   Member[]
@@ -29,7 +32,6 @@ model Organization {
   id              String    @id @default(cuid())
   name            String    // Biro Jasa business name
   slug            String    @unique // for subdomain or URL path
-  subscriptionId  String?   // Midtrans subscription ID
   package         Package   @default(BASIC)
   operatorLimit   Int       @default(1) // based on package
   isActive        Boolean   @default(true)
@@ -91,7 +93,6 @@ model Operator {
 model Subscription {
   id                      String        @id @default(cuid())
   organizationId          String
-  midtransSubscriptionId  String? // Midtrans subscription ID
   /// A18: the payment that created this subscription. Nullable for pre-migration rows.
   subscriptionPaymentId   String?       @unique
   package                 Package
@@ -119,6 +120,7 @@ enum SubscriptionStatus {
   PAST_DUE
   CANCELED
   UNPAID
+  SUPERSEDED // A25: replaced by an upgrade. Retained revenue, not churn.
 }
 
 // Core Business: Files & Transactions
@@ -194,8 +196,7 @@ model Transaction {
   fileId          String?
   type            TransactionType
   amount          Int       // whole rupiah
-  paymentMethod   String?   // cash, transfer, midtrans
-  midtransOrderId String?   // for gateway reconciliation
+  paymentMethod   String?   // cash, transfer
   status          TransactionStatus @default(PENDING)
   notes           String?
   createdAt       DateTime  @default(now())
@@ -224,17 +225,32 @@ enum TransactionStatus {
 }
 
 // Subscription billing
-// One row per Midtrans payment attempt. orderId is unique and is the idempotency key:
-// Midtrans redelivers notifications, and a second delivery must not activate twice.
+// One row per manual-transfer order (A20). orderId stays unique and doubles as the payment
+// code the owner writes in the transfer note; one open row per organization is enforced by
+// the write path, which updates the existing UNPAID/REJECTED row instead of stacking a new one.
 model SubscriptionPayment {
   id             String        @id @default(cuid())
   organizationId String
-  orderId        String        @unique
+  orderId        String        @unique // the payment code the customer writes in the transfer note
   amount         Int           // whole rupiah
   package        Package
   kind           PaymentKind
-  status         PaymentStatus @default(PENDING)
-  paidAt         DateTime?
+  status         PaymentStatus @default(UNPAID)
+  // Set when the status first becomes WAITING_VERIFICATION. The admin queue sorts on it
+  // (A21: oldest first), so a re-upload moves the row to the back — one open payment per org.
+  submittedAt    DateTime?
+  paidAt         DateTime?     // when a Super Admin verified it
+  verifiedAt     DateTime?
+  verifiedByUserId String?
+  rejectedAt     DateTime?
+  rejectedByUserId String?
+  rejectionReason String?      // admin's words, shown to the owner verbatim (§15 state D)
+  // Receipts live outside public/ (A20) and are deleted 90 days after verification;
+  // the row keeps the audit fields after the file is gone.
+  receiptPath    String?
+  receiptMime    String?
+  receiptSize    Int?
+  receiptUploadedAt DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -242,6 +258,7 @@ model SubscriptionPayment {
   subscription   Subscription?
 
   @@index([organizationId, status])
+  @@index([status, submittedAt])
 }
 
 enum PaymentKind {
@@ -250,11 +267,16 @@ enum PaymentKind {
 }
 
 enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  EXPIRED
-  REFUNDED  // refunds are issued manually in the Midtrans dashboard
+  UNPAID               // the row exists; no money has moved yet
+  WAITING_VERIFICATION // receipt uploaded or WhatsApp confirmation sent (A20)
+  PAID                 // verified by a Super Admin — the only status that grants access
+  REJECTED             // same row; the owner re-uploads, it returns to WAITING_VERIFICATION
+}
+
+/// A20: platform staff only. Deliberately not a MemberRole: a tenant role would put the
+/// admin inside an organization, and the admin console must never see tenant data.
+enum PlatformRole {
+  SUPER_ADMIN
 }
 
 // Audit & Security

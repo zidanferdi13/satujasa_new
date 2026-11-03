@@ -120,6 +120,119 @@ export const UI = {
     failed: "Pembayaran gagal atau dibatalkan. Silakan coba lagi.",
   },
 
+  // §12d / A24: the seat is the permission. Same banner on the owner list and the Ubah screen.
+  seat: {
+    readOnly:
+      "Anda tidak memegang slot operator, jadi berkas hanya bisa dilihat. Aktifkan slot Anda untuk mulai mengubah berkas lagi — jika semua slot terpakai, nonaktifkan operator lain lebih dulu.",
+    reactivate: "Aktifkan Slot Saya",
+    reactivateOk: "Slot Anda aktif. Anda bisa mengubah berkas lagi.",
+    reactivateFull: "Semua slot sedang terpakai. Nonaktifkan operator lain lebih dulu, lalu aktifkan slot Anda.",
+  },
+
+  // §15 state B: the manual-transfer instructions (A20). Bank values come from env, never copied here.
+  pay: {
+    title: "Selesaikan Pembayaran",
+    codeLabel: "Kode Pembayaran",
+    codeHelp: "Cantumkan kode ini di berita transfer agar pesanan Anda mudah ditemukan.",
+    amountLabel: "Jumlah",
+    bankLabel: "Transfer ke",
+    accountName: (name: string) => `a.n. ${name}`,
+    copy: "Salin",
+    copied: "Nomor rekening disalin.",
+    steps:
+      "1. Transfer sesuai jumlah di atas. 2. Cantumkan kode pembayaran di berita transfer. 3. Unggah bukti transfer di bawah ini.",
+    uploadCta: "Unggah Bukti Transfer",
+    uploadHint: "JPG, PNG, atau PDF. Maksimal 5 MB.",
+    waCta: "Konfirmasi lewat WhatsApp",
+    waHelp: "Sudah transfer? Kirim bukti lewat WhatsApp sebagai alternatif unggah.",
+    bankMissing:
+      "Nomor rekening belum tersedia. Hubungi kami lewat WhatsApp untuk menyelesaikan pembayaran.",
+    changePlan: "Ganti paket",
+  },
+
+  // §15 states C and D.
+  verify: {
+    waitTitle: "Bukti transfer sudah kami terima",
+    waitBody:
+      "Kami akan memverifikasi pembayaran Anda. Bila ada yang perlu dikonfirmasi, kami menghubungi Anda lewat WhatsApp.",
+    waitCode: (code: string) => `Kode pembayaran: ${code}`,
+    waitLocked: "Selama menunggu, dashboard dan data berkas belum bisa dibuka.",
+    rejTitle: "Bukti transfer belum bisa kami terima",
+    rejReasonLabel: "Alasan",
+    rejBody:
+      "Periksa kembali bukti transfer Anda, lalu unggah ulang. Anda tidak perlu membuat pesanan baru.",
+    rejReupload: "Unggah Ulang Bukti",
+    rejWa: "Tanya lewat WhatsApp",
+    rejCode: (code: string) => `Kode pembayaran tetap ${code}`,
+  },
+
+  // §15 upload feedback. tooBig/badType are the user's mistake; unreadable is ours (magic bytes).
+  up: {
+    sending: "Mengunggah…",
+    done: "Bukti transfer berhasil diunggah.",
+    tooBig: "Ukuran file maksimal 5 MB.",
+    badType: "Format file harus JPG, PNG, atau PDF.",
+    unreadable: "File tidak bisa dibaca. Coba unggah ulang.",
+    failed: "Bukti transfer gagal diunggah. Silakan coba lagi.",
+  },
+
+  // §16 Super Admin console (A20). No key here names a file, a KTP or a revenue figure.
+  adm: {
+    navQueue: "Verifikasi Pembayaran",
+    navOrgs: "Organisasi",
+    queueTitle: "Verifikasi Pembayaran",
+    queueSort: "Terlama di atas",
+    queueEmpty: "Tidak ada pembayaran yang menunggu verifikasi.",
+    colCode: "Kode",
+    colOrg: "Organisasi",
+    colOwner: "Pemilik",
+    colPlan: "Paket",
+    colAmount: "Jumlah",
+    colSent: "Dikirim (WIB)",
+    colAge: "Umur",
+    action: "Periksa",
+    ageToday: "Hari ini",
+    ageYesterday: "1 hari lalu",
+    ageDays: (n: string) => `${n} hari lalu`,
+    detailTitle: (code: string) => `Periksa Pembayaran ${code}`,
+    receipt: "Bukti Transfer",
+    receiptMissing: "Bukti transfer tidak diunggah. Konfirmasi lewat WhatsApp.",
+    verify: "Verifikasi",
+    reject: "Tolak",
+    verifyConfirm: (plan: string, date: string) =>
+      `Verifikasi pembayaran ini? Paket ${plan} aktif sampai ${date}.`,
+    rejectTitle: "Tolak Pembayaran",
+    rejectReasonLabel: "Alasan penolakan (dilihat oleh pemilik)",
+    rejectReasonRequired: "Alasan penolakan wajib diisi.",
+    rejectSend: "Kirim Penolakan",
+    verifiedOk: (date: string) => `Pembayaran diverifikasi. Paket aktif sampai ${date}.`,
+    rejectedOk: "Pembayaran ditolak. Pemilik bisa mengunggah ulang.",
+    alreadyDone: "Pembayaran ini sudah diproses.",
+    staleQueue: "Daftar sudah diperbarui. Pembayaran ini tidak lagi menunggu verifikasi.",
+    errReceipt: "Bukti transfer tidak bisa dibuka.",
+    errGeneric: "Tindakan gagal. Silakan coba lagi.",
+    errForbidden: "Halaman ini hanya untuk admin platform.",
+    orgTitle: "Organisasi",
+    orgLimit: "Batas Operator",
+    orgLimitSave: "Simpan Batas",
+    orgLimitSaved: "Batas operator disimpan.",
+    orgLimitRequired: "Batas operator wajib berupa angka 1 atau lebih.",
+    orgDeactivate: "Nonaktifkan",
+    orgActivate: "Aktifkan",
+    orgDeactivateConfirm:
+      "Nonaktifkan organisasi ini? Owner melihat layar langganan dan operator tidak bisa masuk. Data tidak dihapus.",
+    orgActivateConfirm: "Aktifkan kembali organisasi ini? Akses mengikuti paket yang masih berlaku.",
+    orgInactive: "Nonaktif",
+  },
+
+  // §16 rejection reasons: one-tap options, free text stays available.
+  rr: {
+    unreadable: "Bukti tidak terbaca",
+    amountMismatch: "Jumlah tidak sesuai",
+    notTransfer: "Bukan bukti transfer",
+    other: "Lainnya",
+  },
+
   nav: {
     ownerSubtitle: "Dashboard Owner",
     operatorSubtitle: "Dashboard Operator",

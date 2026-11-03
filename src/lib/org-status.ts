@@ -32,7 +32,7 @@ export async function loadOrganizationStatus(
 ): Promise<OrganizationStatus | null> {
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { id: true, name: true, slug: true, operatorLimit: true },
+    select: { id: true, name: true, slug: true, operatorLimit: true, isActive: true },
   });
   if (!organization) return null;
 
@@ -61,7 +61,9 @@ export async function loadOrganizationStatus(
   return {
     organization,
     subscription,
-    entitled: subscriptionIsActive(subscription),
+    // A20: a deactivated organization is unentitled whatever its subscription says. A refund is
+    // recorded as deactivation, so this is the state a refunded org is left in.
+    entitled: organization.isActive && subscriptionIsActive(subscription),
     overLimit: isOverOperatorLimit(activeOperators, organization.operatorLimit),
     activeOperators,
     activeFiles,
@@ -72,12 +74,15 @@ export async function loadOrganizationStatus(
 
 /** A12: no new berkas, no new operator, without a paid, unexpired subscription. */
 export async function organizationIsEntitled(organizationId: string): Promise<boolean> {
-  const subscription = await prisma.subscription.findFirst({
-    where: { organizationId },
-    orderBy: { createdAt: "desc" },
-    select: subscriptionSelect,
-  });
-  return subscriptionIsActive(subscription);
+  const [subscription, organization] = await Promise.all([
+    prisma.subscription.findFirst({
+      where: { organizationId },
+      orderBy: { createdAt: "desc" },
+      select: subscriptionSelect,
+    }),
+    prisma.organization.findUnique({ where: { id: organizationId }, select: { isActive: true } }),
+  ]);
+  return Boolean(organization?.isActive) && subscriptionIsActive(subscription);
 }
 
 /**
@@ -92,9 +97,14 @@ export async function operatorAccessBlocked(organizationId: string): Promise<boo
       orderBy: { createdAt: "desc" },
       select: subscriptionSelect,
     }),
-    prisma.organization.findUnique({ where: { id: organizationId }, select: { operatorLimit: true } }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { operatorLimit: true, isActive: true },
+    }),
     prisma.operator.count({ where: { organizationId, isActive: true } }),
   ]);
   if (!organization) return true;
+  // A20: deactivation refuses operators at sign-in; the owner still reaches the locked screen.
+  if (!organization.isActive) return true;
   return !operatorMaySignIn(subscription, activeOperators, organization.operatorLimit);
 }

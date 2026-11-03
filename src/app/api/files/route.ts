@@ -5,7 +5,7 @@ import { badRequest, readJson } from "@/lib/http";
 import { fileInputSchema } from "@/lib/file-input";
 import { computeMoney } from "@/lib/file-rules";
 import { organizationIsEntitled } from "@/lib/org-status";
-import { operatorIdFor } from "@/lib/file-queries";
+import { activeSeatFor } from "@/lib/seat-guard";
 import { UI } from "@/lib/ui-strings";
 
 /**
@@ -20,11 +20,10 @@ export async function POST(request: Request) {
   // A12: no new berkas without a paid, unexpired subscription.
   if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.sub.title, 403);
 
-  // Files belong to a staff profile (Operator row), not to a login. The owner has no Operator row
-  // until M4 owner-as-operator, so this path is not reachable from the owner UI; the message stays
-  // developer-facing (A16).
-  const operatorId = await operatorIdFor(session.user.id, organizationId);
-  if (!operatorId) return badRequest("Only an active operator can create a file", 403);
+  // A24: the seat is the permission, for owner and operator alike. A seatless owner can read
+  // their berkas but cannot write one; the UI shows the same rule as a banner.
+  const operator = await activeSeatFor(session.user.id, organizationId);
+  if (!operator) return badRequest(UI.seat.readOnly, 403);
 
   const parsedBody = await readJson(request);
   if (!parsedBody.ok) return badRequest(UI.common.badJson);
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
   const file = await prisma.file.create({
     data: {
       organizationId,
-      operatorId,
+      operatorId: operator.id,
       customerName: input.customerName,
       customerKtp: input.customerKtp,
       vehicleNumber: input.vehicleNumber,

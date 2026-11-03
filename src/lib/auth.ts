@@ -55,7 +55,12 @@ export const { handlers, auth } = NextAuth({
         }
 
         // BUG-15/A12: owners always get in (they see the locked screen); operators do not.
-        if (access.role === "OPERATOR" && (await operatorAccessBlocked(access.organizationId))) {
+        // A20: platform staff have no organization to check.
+        if (
+          access.role === "OPERATOR" &&
+          access.organizationId &&
+          (await operatorAccessBlocked(access.organizationId))
+        ) {
           throw new OperatorBlocked();
         }
 
@@ -86,7 +91,11 @@ export const { handlers, auth } = NextAuth({
       }
 
       // BUG-15: a lapse mid-session ends the operator's session on their next request.
-      if (access.role === "OPERATOR" && (await operatorAccessBlocked(access.organizationId))) {
+      if (
+        access.role === "OPERATOR" &&
+        access.organizationId &&
+        (await operatorAccessBlocked(access.organizationId))
+      ) {
         return null;
       }
 

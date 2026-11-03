@@ -7,6 +7,6 @@ import { dashboardPathFor } from "@/lib/rbac";
 export default async function DashboardIndexPage() {
   await connection();
   const session = await auth();
-  if (!session?.user?.organizationId) redirect("/login");
+  if (!session?.user) redirect("/login");
   redirect(dashboardPathFor(session.user.role));
 }

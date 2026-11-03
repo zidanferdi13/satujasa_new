@@ -8,6 +8,7 @@ import { maskKtp } from "@/lib/file-rules";
 import { formatRupiah } from "@/lib/money";
 import { formatJakartaDate } from "@/lib/date-format";
 import { loadOrganizationStatus } from "@/lib/org-status";
+import { activeSeatFor } from "@/lib/seat-guard";
 import { StatusBadge } from "@/components/files/status-badge";
 import { OwnershipFilter, parseOwnership } from "@/components/files/ownership-filter";
 import { buttonVariants } from "@/components/ui/button";
@@ -29,6 +30,9 @@ export default async function OwnerFilesPage({
   const status = await loadOrganizationStatus(organizationId);
   if (!status?.entitled) redirect("/dashboard/owner");
 
+  // A24: the seat decides whether "Input Berkas" exists. Viewing never costs a seat.
+  const seat = await activeSeatFor(session.user.id, organizationId);
+
   const files = await prisma.file.findMany({
     where: { organizationId, ...(ownership ? { ownershipType: ownership } : {}) },
     orderBy: { createdAt: "desc" },
@@ -47,7 +51,14 @@ export default async function OwnerFilesPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-bold">{UI.nav.files}</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">{UI.nav.files}</h1>
+        {seat ? (
+          <Link href="/dashboard/owner/files/new" className={buttonVariants({ className: "h-10" })}>
+            {UI.empty.myFilesAction}
+          </Link>
+        ) : null}
+      </div>
 
       <OwnershipFilter basePath="/dashboard/owner/files" active={ownership} />
 

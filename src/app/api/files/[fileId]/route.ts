@@ -5,7 +5,7 @@ import { badRequest, readJson } from "@/lib/http";
 import { fileInputSchema } from "@/lib/file-input";
 import { computeMoney, transitionRefusal } from "@/lib/file-rules";
 import { organizationIsEntitled } from "@/lib/org-status";
-import { operatorIdFor } from "@/lib/file-queries";
+import { activeSeatFor } from "@/lib/seat-guard";
 import { UI } from "@/lib/ui-strings";
 
 /**
@@ -21,6 +21,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ fi
 
   const { fileId } = await params;
 
+  // A24: no seat, no write — for any role. This closes the owner bypass this handler used to
+  // have (it branched on OPERATOR only, so an owner without a seat could edit any file).
+  const seat = await activeSeatFor(session.user.id, organizationId);
+  if (!seat) return badRequest(UI.seat.readOnly, 403);
+
   // Tenant isolation: the id alone is never enough, organizationId is part of the lookup.
   const existing = await prisma.file.findFirst({
     where: { id: fileId, organizationId },
@@ -28,12 +33,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ fi
   });
   if (!existing) return NextResponse.json({}, { status: 404 });
 
-  // An operator edits their own files. The owner may correct any file in their own organization.
-  if (session.user.role === "OPERATOR") {
-    const operatorId = await operatorIdFor(session.user.id, organizationId);
-    if (!operatorId || operatorId !== existing.operatorId) {
-      return NextResponse.json({}, { status: 404 });
-    }
+  // An operator edits their own files. The owner, holding a seat, may correct any file in their
+  // own organization. Cross-operator ids stay 404: they exist, but not for this caller.
+  if (session.user.role === "OPERATOR" && seat.id !== existing.operatorId) {
+    return NextResponse.json({}, { status: 404 });
   }
 
   const parsedBody = await readJson(request);

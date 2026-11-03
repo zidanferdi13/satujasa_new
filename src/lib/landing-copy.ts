@@ -11,6 +11,7 @@
  * second time. Revenue = customer payment − SAMSAT cost = biaya jasa.
  */
 import { UI } from "./ui-strings.ts";
+import { WHATSAPP_NUMBER } from "./whatsapp.ts";
 import { formatRupiah } from "./money.ts";
 import { PLANS, type PlanId } from "./plans.ts";
 
@@ -21,7 +22,7 @@ export type Feature = { readonly title: string; readonly body: string };
  * confirmed by the client; the prefilled message is the one in docs/landing-copy-id.md.
  */
 export const WHATSAPP_URL =
-  "https://wa.me/6281319535441?text=" +
+  `https://wa.me/${WHATSAPP_NUMBER}?text=` +
   encodeURIComponent("Halo, saya ingin bertanya tentang paket Custom Biro Jasa.");
 export type FaqItem = { readonly question: string; readonly answer: string };
 

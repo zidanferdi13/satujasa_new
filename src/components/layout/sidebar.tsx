@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { MemberRole } from "@prisma/client";
-import { FolderOpen, LayoutDashboard, LogOut } from "lucide-react";
+import { Building2, FolderOpen, LayoutDashboard, LogOut, ReceiptText } from "lucide-react";
 import { UI } from "@/lib/ui-strings";
+import type { SessionRole } from "@/lib/access";
 
 // A16: only routes that exist. Berkas opened in M3; Operators, Pendapatan and Pengaturan return
 // with the milestone that builds their page, in the same commit as the route.
@@ -18,19 +19,27 @@ const operatorNavItems = [
   { href: "/dashboard/operator", label: UI.nav.dashboard, icon: LayoutDashboard, exact: true },
   { href: "/dashboard/operator/files", label: UI.nav.files, icon: FolderOpen, exact: false },
 ];
+// A20: the admin console has no file, KTP or revenue link, because it has no such page.
+const adminNavItems = [
+  { href: "/dashboard/admin", label: UI.adm.navQueue, icon: ReceiptText, exact: true },
+  { href: "/dashboard/admin/organizations", label: UI.adm.navOrgs, icon: Building2, exact: false },
+];
 
-export function DashboardSidebar({ role }: { role: MemberRole }) {
+export function DashboardSidebar({ role }: { role: SessionRole }) {
   const pathname = usePathname();
+  const isAdmin = role === "SUPER_ADMIN";
   const isOwner = role === MemberRole.OWNER;
-  const navItems = isOwner ? ownerNavItems : operatorNavItems;
+  const navItems = isAdmin ? adminNavItems : isOwner ? ownerNavItems : operatorNavItems;
 
   return (
     <aside className="w-64 border-r bg-white">
       <div className="p-6">
         <p className="text-xl font-bold">Biro Jasa</p>
-        <p className="text-sm text-gray-500">
-          {isOwner ? UI.nav.ownerSubtitle : UI.nav.operatorSubtitle}
-        </p>
+        {isAdmin ? null : (
+          <p className="text-sm text-gray-500">
+            {isOwner ? UI.nav.ownerSubtitle : UI.nav.operatorSubtitle}
+          </p>
+        )}
       </div>
       <nav className="px-4 space-y-1">
         {navItems.map((item) => {

@@ -35,13 +35,18 @@ test("A21/A23: the promise is one pair of keys, imported everywhere, never retyp
   const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
   const sources = [
     src("./landing-copy.ts"),
-    src("../app/dashboard/owner/page.tsx"),
+    // §15 moved the locked screen (promise place 1) to one route; the test follows the place,
+    // not the file name, so moving it again cannot silently drop the promise.
+    src("../app/dashboard/subscription/subscribe-client.tsx"),
     src("../app/page.tsx"),
   ].join("\n");
   // Retyping the sentence anywhere outside ui-strings.ts is how a second phrasing starts.
   assert.equal(sources.includes("maksimal 1 hari kerja"), false);
   assert.match(src("./landing-copy.ts"), /UI\.promise\.core/);
-  assert.match(src("../app/dashboard/owner/page.tsx"), /UI\.promise\.core[\s\S]*UI\.promise\.weekend/);
+  assert.match(
+    src("../app/dashboard/subscription/subscribe-client.tsx"),
+    /UI\.promise\.core[\s\S]*UI\.promise\.weekend/
+  );
   assert.equal(/2\s*[×x]\s*24/i.test(JSON.stringify(UI)), false);
 });
 

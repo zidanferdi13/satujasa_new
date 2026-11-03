@@ -84,16 +84,31 @@ async function main() {
     create: { email: OWNER.email, name: OWNER.name, passwordHash },
   });
 
+  // A5/A24: Basic yields one worker total, so a demo that needs an owner *and* a staff operator
+  // cannot be Basic. Pro (3 seats) is also the plan a biro with staff actually buys.
   const organization = await prisma.organization.upsert({
     where: { slug: "biro-jasa-demo" },
     update: {},
-    create: { name: "Biro Jasa Demo", slug: "biro-jasa-demo", package: "BASIC", operatorLimit: 1 },
+    create: { name: "Biro Jasa Demo", slug: "biro-jasa-demo", package: "PRO", operatorLimit: 3 },
   });
 
-  await prisma.member.upsert({
+  const ownerMember = await prisma.member.upsert({
     where: { userId_organizationId: { userId: owner.id, organizationId: organization.id } },
     update: {},
     create: { userId: owner.id, organizationId: organization.id, role: "OWNER" },
+  });
+
+  // A24: the owner who works holds one of the seats, and verification provisions it in production.
+  // Seeded here so the demo org has the row without anyone pressing "verify" on seed data.
+  await prisma.operator.upsert({
+    where: { memberId: ownerMember.id },
+    update: {},
+    create: {
+      organizationId: organization.id,
+      memberId: ownerMember.id,
+      email: OWNER.email,
+      name: OWNER.name,
+    },
   });
 
   const existingActive = await prisma.subscription.count({
@@ -109,10 +124,11 @@ async function main() {
       create: {
         organizationId: organization.id,
         orderId: "DEMO-SEED-1",
-        amount: 99_000,
+        amount: 249_000,
         status: "PAID",
         paidAt: new Date(),
-        package: "BASIC",
+        verifiedAt: new Date(),
+        package: "PRO",
         kind: "PURCHASE",
       },
     });
@@ -120,8 +136,8 @@ async function main() {
       data: {
         organizationId: organization.id,
         subscriptionPaymentId: seedPayment.id,
-        package: "BASIC",
-        operatorLimit: 1,
+        package: "PRO",
+        operatorLimit: 3,
         status: "ACTIVE",
         currentPeriodStart: new Date(),
         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

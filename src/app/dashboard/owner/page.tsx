@@ -1,9 +1,9 @@
+import { redirect } from "next/navigation";
 import { MemberRole } from "@prisma/client";
 import { requireRole } from "@/lib/require-role";
 import { canAddOperator } from "@/lib/operator-quota";
 import OperatorForm from "./operator-form";
 import { loadOrganizationStatus } from "@/lib/org-status";
-import { PricingCards } from "@/components/landing/pricing-cards";
 import { UI } from "@/lib/ui-strings";
 import { formatRupiah } from "@/lib/money";
 import { formatJakartaDate } from "@/lib/date-format";
@@ -15,22 +15,9 @@ export default async function OwnerDashboardPage() {
   const organizationId = session.user.organizationId;
   const status = organizationId ? await loadOrganizationStatus(organizationId) : null;
 
-  // A12: never-paid and lapsed orgs get the same locked screen; nothing else is usable.
-  // A19: no Basic/Pro buttons here — a signed-in owner sent to /register hits a signup form.
-  // They come back in the commit that adds /checkout.
-  if (!status || !status.entitled) {
-    return (
-      <div className="max-w-5xl">
-        <h1 className="text-3xl font-bold mb-2">{UI.sub.title}</h1>
-        <p className="text-muted-foreground mb-1">{UI.sub.body}</p>
-        {/* A21: place 1 of 3. Same two keys as the FAQ; the Terms page is blocked on A11. */}
-        <p className="text-muted-foreground mb-1">{UI.promise.core}</p>
-        <p className="text-muted-foreground mb-1">{UI.promise.weekend}</p>
-        <p className="text-muted-foreground mb-8">{UI.sub.operatorNote}</p>
-        <PricingCards paidPlansHref={null} />
-      </div>
-    );
-  }
+  // A12: a never-paid or lapsed org can use exactly one screen, and it is the subscribe screen.
+  // A19/§15: that screen lives at one route, so the locked dashboard does not duplicate its cards.
+  if (!status || !status.entitled) redirect("/dashboard/subscription");
 
   const { organization, subscription, activeOperators, activeFiles, revenueThisMonth, overLimit } =
     status;
