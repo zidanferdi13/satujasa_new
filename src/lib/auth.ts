@@ -3,10 +3,10 @@ import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
-import type { MemberRole } from "@prisma/client"
 import { normalizeEmail } from "@/lib/validations"
 import { currentAccess } from "@/lib/current-access"
 import { operatorAccessBlocked } from "@/lib/org-status"
+import { sessionFromToken } from "@/lib/session"
 
 /**
  * BUG-15: the credentials were correct, but the organization's subscription is not usable.
@@ -95,12 +95,9 @@ export const { handlers, auth } = NextAuth({
       token.role = access.role;
       return token;
     },
+    // BUG-18: the id rides in token.sub; sessionFromToken copies it with the rest.
     async session({ session, token }) {
-      if (session.user) {
-        session.user.organizationId = token.organizationId as string | null;
-        session.user.role = token.role as MemberRole;
-      }
-      return session;
+      return sessionFromToken(session, token);
     },
   },
   pages: {

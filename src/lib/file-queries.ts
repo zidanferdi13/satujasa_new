@@ -10,6 +10,9 @@ import type { FileFormValues } from "@/components/files/file-form";
 
 /** The signed-in user's Operator row, and only while it is active. Deactivated means no identity. */
 export async function operatorIdFor(userId: string, organizationId: string): Promise<string | null> {
+  // BUG-18: a falsy user id must never reach Prisma. `member: { userId: undefined }` is dropped
+  // from the where clause, so the query would answer with any member of the organization.
+  if (!userId || !organizationId) return null;
   const membership = await prisma.member.findFirst({
     where: { userId, organizationId },
     select: { operator: { select: { id: true, isActive: true } } },

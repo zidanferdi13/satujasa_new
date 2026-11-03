@@ -5,6 +5,7 @@ import { badRequest, readJson } from "@/lib/http";
 import { fileInputSchema } from "@/lib/file-input";
 import { computeMoney } from "@/lib/file-rules";
 import { organizationIsEntitled } from "@/lib/org-status";
+import { operatorIdFor } from "@/lib/file-queries";
 import { UI } from "@/lib/ui-strings";
 
 /**
@@ -22,12 +23,8 @@ export async function POST(request: Request) {
   // Files belong to a staff profile (Operator row), not to a login. The owner has no Operator row
   // until M4 owner-as-operator, so this path is not reachable from the owner UI; the message stays
   // developer-facing (A16).
-  const membership = await prisma.member.findFirst({
-    where: { userId: session.user.id, organizationId },
-    select: { operator: { select: { id: true, isActive: true } } },
-  });
-  const operator = membership?.operator;
-  if (!operator?.isActive) return badRequest("Only an active operator can create a file", 403);
+  const operatorId = await operatorIdFor(session.user.id, organizationId);
+  if (!operatorId) return badRequest("Only an active operator can create a file", 403);
 
   const parsedBody = await readJson(request);
   if (!parsedBody.ok) return badRequest(UI.common.badJson);
@@ -43,7 +40,7 @@ export async function POST(request: Request) {
   const file = await prisma.file.create({
     data: {
       organizationId,
-      operatorId: operator.id,
+      operatorId,
       customerName: input.customerName,
       customerKtp: input.customerKtp,
       vehicleNumber: input.vehicleNumber,

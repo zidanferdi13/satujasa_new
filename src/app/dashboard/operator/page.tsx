@@ -3,22 +3,19 @@ import { requireRole } from "@/lib/require-role";
 import { prisma } from "@/lib/prisma";
 import { ACTIVE_FILE_STATUSES } from "@/lib/file-rules";
 import { UI } from "@/lib/ui-strings";
+import { operatorIdFor } from "@/lib/file-queries";
 
 export default async function OperatorDashboardPage() {
   // RBAC gate must live in the page: layouts render in parallel and cannot stop page output.
   const session = await requireRole(MemberRole.OPERATOR);
 
   // Operator identity comes from the session's own Member row, never from the request.
-  const operator = await prisma.operator.findFirst({
-    where: {
-      member: { userId: session.user.id, organizationId: session.user.organizationId ?? "" },
-    },
-    select: { id: true },
-  });
-  const mine = { operatorId: operator?.id ?? "" };
+  // BUG-18: operatorIdFor refuses a falsy user id instead of letting Prisma drop the filter.
+  const operatorId = await operatorIdFor(session.user.id, session.user.organizationId ?? "");
+  const mine = { operatorId: operatorId ?? "" };
 
   // A16: real numbers, 0 when empty — never "-". "Selesai" counts files already picked up.
-  const [myFiles, pending, completed] = operator
+  const [myFiles, pending, completed] = operatorId
     ? await Promise.all([
         prisma.file.count({ where: mine }),
         prisma.file.count({ where: { ...mine, status: { in: [...ACTIVE_FILE_STATUSES] } } }),

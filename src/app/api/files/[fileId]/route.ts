@@ -5,6 +5,7 @@ import { badRequest, readJson } from "@/lib/http";
 import { fileInputSchema } from "@/lib/file-input";
 import { computeMoney, transitionRefusal } from "@/lib/file-rules";
 import { organizationIsEntitled } from "@/lib/org-status";
+import { operatorIdFor } from "@/lib/file-queries";
 import { UI } from "@/lib/ui-strings";
 
 /**
@@ -29,12 +30,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ fi
 
   // An operator edits their own files. The owner may correct any file in their own organization.
   if (session.user.role === "OPERATOR") {
-    const membership = await prisma.member.findFirst({
-      where: { userId: session.user.id, organizationId },
-      select: { operator: { select: { id: true, isActive: true } } },
-    });
-    const operator = membership?.operator;
-    if (!operator?.isActive || operator.id !== existing.operatorId) {
+    const operatorId = await operatorIdFor(session.user.id, organizationId);
+    if (!operatorId || operatorId !== existing.operatorId) {
       return NextResponse.json({}, { status: 404 });
     }
   }
