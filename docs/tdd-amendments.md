@@ -462,11 +462,15 @@ adds it, so the value is referenced by application code only, never by migration
 | Renewal (same plan) | extended in place, `ACTIVE` | none |
 | Upgrade | `ACTIVE` → `SUPERSEDED` | one `ACTIVE` row |
 | Downgrade at period end | `ACTIVE` → `CANCELED` | one `ACTIVE` row |
-| Verification of a lapsed org | none/`UNPAID` untouched | one `ACTIVE` row |
+| Verification of a lapsed org | lapsed `ACTIVE` → `UNPAID`; other rows untouched | one `ACTIVE` row |
 
 `Subscription_one_active_per_org` (partial unique on `status = 'ACTIVE'`, migration 4) is checked at
 insert, so the prior `ACTIVE` row is closed **before** the new one is inserted, in that order, inside
 the verification transaction.
+
+A row still marked `ACTIVE` after its period ended is not superseded — nothing replaced it, it
+expired — so it becomes `UNPAID` before the new row is inserted. `SUPERSEDED` therefore always means
+"replaced while still entitled", which is what makes it safe to read as retained revenue.
 
 `CANCELED` stays reserved for customer-initiated termination. Retention reporting excludes
 `CANCELED`, `SUPERSEDED` and `UNPAID` from "active"; churn counts `CANCELED` only. An upgrade is

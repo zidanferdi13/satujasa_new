@@ -20,6 +20,9 @@
 # production
 /build
 
+# backups (A22): ciphertext only, never committed
+/var/
+
 # misc
 .DS_Store
 *.pem

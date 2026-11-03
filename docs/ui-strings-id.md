@@ -328,6 +328,7 @@ Rules:
 - **Row action "Ubah" is not rendered** in the owner file list while seatless. Tapping into a record the user cannot save is a dead end.
 - **`seat.reactivate` sits in the banner**, never in a toast or a modal. One click, and `seat.reactivateFull` explains the one case where it fails.
 - Style: `--muted` box, `--foreground` text, `aria-live="polite"` so a failed reactivation is announced. Not `--destructive`: nothing is broken.
+- **The 403 body and the banner are the same string on purpose** (`UI.seat.readOnly`). 184 characters in a toast is unreadable for four seconds, so the client renders a 403 from `POST`/`PATCH /api/files` as the banner state, not as a notification. Same reason the banner exists: a standing cause needs a standing message.
 - **Distinct from `addop.overLimit`** (organization over its package limit after a downgrade) and from the locked screen (no active subscription). Three different causes, three different sentences; collapsing them would send the owner to the wrong fix.
 
 For the same reason the filtered-empty state says "Reset Filter", not "Hapus Filter": the word "Hapus" appears nowhere in the product, so it cannot train a user to expect a delete that does not exist.
