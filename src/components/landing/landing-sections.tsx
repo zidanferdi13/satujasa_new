@@ -7,6 +7,7 @@ import {
   HERO_COPY,
   NAV_COPY,
 } from "@/lib/landing-copy";
+import { UI } from "@/lib/ui-strings";
 
 function SiteHeader() {
   return (
@@ -88,7 +89,11 @@ function Features() {
   );
 }
 
-function Footer() {
+/**
+ * `anchorBase` keeps the section links working off the landing page: on /kebijakan-privasi a bare
+ * "#harga" goes nowhere, while "/#harga" goes home. The footer is shared, so the links follow it.
+ */
+function Footer({ anchorBase = "" }: { anchorBase?: string }) {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between">
@@ -99,7 +104,7 @@ function Footer() {
             {FOOTER_COPY.productLinks.map((link) => (
               <li key={link.href}>
                 <a
-                  href={link.href}
+                  href={`${anchorBase}${link.href}`}
                   className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
                   {link.label}
@@ -115,6 +120,23 @@ function Footer() {
               >
                 {FOOTER_COPY.contactLink.label}
               </a>
+            </li>
+            {/* A16: these render because both pages ship now. No dead links either way. */}
+            <li>
+              <Link
+                href="/kebijakan-privasi"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {UI.footer.privacy}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/syarat-ketentuan"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {UI.footer.terms}
+              </Link>
             </li>
           </ul>
         </nav>

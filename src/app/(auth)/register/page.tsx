@@ -115,6 +115,27 @@ export default function RegisterPage() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? UI.reg.submitting : UI.reg.submit}
           </Button>
+          {/* §18: a statement, not a checkbox — submitting already agrees. Both links open in a
+              new tab so a half-filled form survives the read. */}
+          <p className="text-center text-sm text-muted-foreground">
+            {UI.reg.legalAgree.split(/(\{[^}]+\})/).map((part, index) => {
+              const match = /^\{(.+)\}$/.exec(part);
+              if (!match) return part;
+              const href =
+                match[1] === UI.legal.termsTitle ? "/syarat-ketentuan" : "/kebijakan-privasi";
+              return (
+                <Link
+                  key={index}
+                  href={href}
+                  target="_blank"
+                  rel="noopener"
+                  className="underline underline-offset-4"
+                >
+                  {match[1]}
+                </Link>
+              );
+            })}
+          </p>
           <p className="text-center text-sm text-muted-foreground">
             {UI.reg.haveAccount}{" "}
             <Link href="/login" className="underline">

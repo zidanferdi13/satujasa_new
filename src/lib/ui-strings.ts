@@ -61,6 +61,9 @@ export const UI = {
     slugRetry: "Gagal membuat akun. Silakan coba lagi.",
     haveAccount: "Sudah punya akun?",
     haveAccountLink: "Masuk",
+    // §18: statement, not a checkbox. The braces are link slots, filled by the page.
+    legalAgree:
+      "Dengan mendaftar, Anda menyetujui {Syarat & Ketentuan} dan {Kebijakan Privasi}.",
   },
 
   fp: {
@@ -95,6 +98,19 @@ export const UI = {
     operatorNote: "Operator tidak bisa login sampai langganan aktif.",
     planHeading: "Pilih Paket",
     export: "Ekspor Data",
+  },
+
+  // §18 (A24): legal pages. Titles and links only — the body is docs/legal-id.md, placed verbatim
+  // through src/lib/legal-content.ts, and never edited here.
+  legal: {
+    privacyTitle: "Kebijakan Privasi",
+    termsTitle: "Syarat & Ketentuan",
+    updated: (date: string) => `Berlaku sejak ${date}`,
+  },
+
+  footer: {
+    privacy: "Kebijakan Privasi",
+    terms: "Syarat & Ketentuan",
   },
 
   // §14 / A21: one promise, two sentences. Every placement renders these keys; nothing retypes them.
