@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { badRequest } from "@/lib/http";
+import { organizationIsEntitled } from "@/lib/org-status";
 import { activeSeatFor } from "@/lib/seat-guard";
 import { buildSuratJalan } from "@/lib/surat-jalan";
 import { UI } from "@/lib/ui-strings";
@@ -18,6 +19,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
   const organizationId = session?.user?.organizationId;
   if (!session?.user || !organizationId) return badRequest(UI.common.notSignedIn, 401);
 
+  // A12: no printing without a paid, unexpired subscription — the same gate as creating a berkas.
+  if (!(await organizationIsEntitled(organizationId))) return badRequest(UI.sub.title, 403);
+
   const seat = await activeSeatFor(session.user.id, organizationId);
   if (!seat) return badRequest(UI.seat.readOnly, 403);
 
@@ -33,6 +37,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
       serviceType: true,
       notes: true,
       operatorId: true,
+      status: true,
       pickedUpAt: true,
       createdAt: true,
       operator: { select: { name: true } },
@@ -43,6 +48,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
   if (!file) return NextResponse.json({}, { status: 404 });
   if (session.user.role === "OPERATOR" && file.operatorId !== seat.id) {
     return NextResponse.json({}, { status: 404 });
+  }
+  // A26: a cancelled berkas never travelled, so it has no Surat Jalan. 409 rather than 404 because
+  // the file exists and the caller may be looking at a stale tab the form no longer offers.
+  if (file.status === "CANCELED") {
+    return NextResponse.json({ error: UI.file.printCancelled }, { status: 409 });
   }
 
   const pdf = await buildSuratJalan({

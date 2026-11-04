@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Printer } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UI } from "@/lib/ui-strings";
@@ -338,7 +339,7 @@ export default function FileForm({
         )}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         {!isTerminal && (
           <Button type="submit" disabled={loading}>
             {loading ? UI.file.submitting : file ? UI.file.update : UI.file.submit}
@@ -350,6 +351,20 @@ export default function FileForm({
         >
           {UI.file.cancel}
         </Link>
+        {/* §12e: last in the row and pushed right, so a print is never a misclick on Simpan.
+            Absent rather than disabled for a cancelled berkas — that file has no journey to
+            print for, and a greyed button invites a click that can only fail. */}
+        {file && file.status !== "CANCELED" && (
+          <Link
+            href={`/api/files/${file.id}/surat-jalan`}
+            target="_blank"
+            rel="noopener"
+            className={buttonVariants({ variant: "outline", className: "md:ml-auto" })}
+          >
+            <Printer aria-hidden className="size-4" />
+            {UI.file.print}
+          </Link>
+        )}
       </div>
     </form>
   );

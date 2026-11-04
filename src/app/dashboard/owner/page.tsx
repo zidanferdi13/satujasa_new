@@ -88,7 +88,13 @@ export default async function OwnerDashboardPage() {
               {revenueByOperator.map((row) => (
                 <li key={row.operatorId} className="flex items-baseline justify-between py-2">
                   <span>{row.operatorName}</span>
-                  <span className="font-medium">{formatRupiah(row.revenue)}</span>
+                  <span className="text-right">
+                    <span className="font-medium block">{formatRupiah(row.revenue)}</span>
+                    {/* §12e: how many jobs produced that number. A count, never money. */}
+                    <span className="text-xs text-muted-foreground">
+                      {UI.own.revenueByOpCount(String(row.files))}
+                    </span>
+                  </span>
                 </li>
               ))}
               <li className="flex items-baseline justify-between py-2 border-t font-semibold">

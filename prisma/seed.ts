@@ -38,6 +38,13 @@ const PASSWORD = process.env.DEMO_PASSWORD ?? "demo1234";
 
 const OWNER = { email: "owner@demo.test", name: "Owner Demo" };
 const OPERATOR = { email: "operator@demo.test", name: "Operator Demo" };
+/**
+ * A20: a Super Admin lives outside tenancy — `platformRole`, no `Member` row, no organization.
+ * Zidan runs that console, so the demo cannot depend on someone having typed an INSERT once:
+ * a state that exists only by hand is one reseed away from a demo where the receipt queue
+ * cannot be shown. This user is deliberately given no membership below.
+ */
+const SUPER_ADMIN = { email: "admin@demo.test", name: "Super Admin Demo" };
 
 const FILES = [
   {
@@ -209,7 +216,22 @@ async function main() {
     }
   }
 
-  console.log(`seeded: ${organization.name} (owner ${OWNER.email}, operator ${OPERATOR.email})`);
+  // Idempotent like the rest: the role is re-asserted on every run, so a demoted admin is
+  // promoted back rather than leaving the console unreachable.
+  await prisma.user.upsert({
+    where: { email: SUPER_ADMIN.email },
+    update: { platformRole: "SUPER_ADMIN" },
+    create: {
+      email: SUPER_ADMIN.email,
+      name: SUPER_ADMIN.name,
+      passwordHash,
+      platformRole: "SUPER_ADMIN",
+    },
+  });
+
+  console.log(
+    `seeded: ${organization.name} (owner ${OWNER.email}, operator ${OPERATOR.email}, super admin ${SUPER_ADMIN.email})`
+  );
 }
 
 main()

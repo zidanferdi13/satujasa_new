@@ -258,6 +258,8 @@ export const UI = {
     // like any other — they may hold a seat, so their work is not a separate total.
     revenueByOp: "Pendapatan per Operator",
     revenueByOpEmpty: "Belum ada berkas yang diambil bulan ini.",
+    // §12e: a count is a count. Never routed through formatRupiah, never summed into a total.
+    revenueByOpCount: (n: string) => `${n} berkas`,
   },
 
   addop: {
@@ -352,6 +354,10 @@ export const UI = {
     pickedUpAt: "Diambil pada",
     createdAt: "Diinput pada",
     submit: "Simpan Berkas",
+    // §12e: one key, both detail screens — FileForm renders it for operator and owner alike.
+    print: "Cetak Surat Jalan",
+    printCancelled:
+      "Berkas yang sudah dibatalkan tidak punya Surat Jalan untuk dicetak.",
     update: "Simpan Perubahan",
     submitting: "Menyimpan…",
     cancel: "Batal",

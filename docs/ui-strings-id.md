@@ -309,6 +309,27 @@ There is no delete action on a file, in any screen. A file is cancelled through 
 
 Wording matters here. The action is "Batalkan", never "Hapus". A user who wants to remove a mistake will look for "Hapus" and should not find it.
 
+### 12e. Print — Surat Jalan (A26, M4)
+
+| Key | Indonesian |
+|---|---|
+| file.print | Cetak Surat Jalan |
+| file.printCancelled | Berkas yang sudah dibatalkan tidak punya Surat Jalan untuk dicetak. |
+| own.revenueByOpCount | {n} berkas |
+
+**1. `file.print`** — one key, both detail screens. `FileForm` renders it, so operator and owner get the same control in the same place without a second implementation.
+
+- Placement: the action row at the bottom of the form, beside the primary action, last of the three — `[Simpan] [Kembali] [Cetak Surat Jalan]`. Same row because it acts on the record the form is showing; last because a print button next to save is a misclick that produces a document instead of an error message.
+- Desktop: `ml-auto` puts it at the far right, away from Simpan. Mobile: it wraps under the other two rather than shrinking the labels.
+- Outline variant, `Printer` icon (`aria-hidden`), opens `/api/files/{id}/surat-jalan` in a new tab with `rel="noopener"`. The route sends `inline`, so the browser previews the PDF and the user prints from there — we never call `window.print()` on the form.
+- **Not rendered when status is `CANCELED`.** The action is absent, not disabled; a greyed button invites a click that can only fail. The 409 from `file.printCancelled` covers a stale tab or a bookmarked URL, which is the only way to reach that state.
+- Known limit, accepted for M4: if the form has unsaved edits, the PDF shows the stored version, not what is on screen. Disabling print while dirty would block a legitimate request (people print right after opening a record, before editing) and a warning line would be a fourth string for a case the record's own dates already make visible. Revisit if QA sees confusion in testing.
+
+**2. `own.revenueByOpCount`** — `OperatorTotal.files`, the count that exists and is currently unshown. Placement: Owner · Beranda, the per-operator revenue list. Each row gets a right-aligned second line under the rupiah amount, `text-xs`, `--muted-foreground`. The money stays the headline (criterion #4); the count answers "how many jobs produced that number", which is the question the owner asks next.
+
+- A count is never formatted as money: no `formatRupiah`, no "Rp", no thousands separator beyond `Intl.NumberFormat('id-ID')` default for integers. `3 berkas`, `1 berkas` — Indonesian does not pluralise, so there is no second form to get wrong.
+- The total row keeps its current content. `RevenueReport.total.files` exists, but adding a second count there invites the owner to sum the rows by hand and find the unpriced fetched files missing (A26). One count, per operator, no total.
+
 ### 12d. Seatless owner — read-only (A24)
 
 An owner without an active `Operator` row can read everything and change nothing. The seat is the permission, not the role, so this state is normal operation (the owner handed the seat to staff), not an error and not a degraded account.

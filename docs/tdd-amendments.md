@@ -479,3 +479,65 @@ retained revenue, not churn, and M4 must not blur the two.
 **Demo data:** the seeded organization is PRO (limit 3) with a Rp249.000 PRO payment, because A5/A24
 give Basic one worker total and the demo needs an owner plus a staff operator. Demo data only; prices
 are unchanged.
+
+## A26. Revenue has one definition; the Surat Jalan carries no money (CEO 2026-11-02)
+
+**Revenue.** Per-operator revenue is Σ (`finalPrice` − `samsatPayment`) over berkas attributed to
+that operator; the owner total is the same sum across all operators, the owner's own berkas
+included. `serviceFee` and `revenue` are the same number per file (A1) — if they ever differ, that
+is a bug, not a second metric.
+
+**Period is cash-basis: `pickedUpAt` inside the current Jakarta month**, not `createdAt`. A berkas
+created in one month and handed over in the next belongs to the month the money moved. The card and
+the per-operator table must come from one query, so the total is always the sum of the rows.
+
+**Counts are counts.** Active operators, filenames and seats are never run through `formatRupiah`.
+Only income figures are money: exactly two, the row and the total.
+
+**Unpriced berkas are excluded, not zeroed.** A picked-up file with a null `finalPrice` or
+`samsatPayment` contributes to neither the count nor the sum; it never adds a silent zero to a total.
+
+**Surat Jalan prints no money at all.** It goes to SAMSAT; the customer's price and our margin are
+not theirs to read. It carries the full 16-digit NIK (A23) and the ownership label from
+`UI.ownership`, never the raw enum.
+
+**Attribution is frozen at pickup.** A berkas belongs to the operator who did the work, so the row
+survives that operator's seat being deactivated: revenue is money already earned, and hiding it would
+make the total stop matching the sum of the row someone is looking at. Only *permission* follows the
+seat; *attribution* follows the work.
+
+**Printing requires entitlement as well as a seat.** The sheet carries the customer's KTP, so an
+organization without an active subscription cannot print one, the same rule that stops it creating a
+berkas. A lapsed org keeps its data and can read it; it cannot produce new control documents.
+
+**Free-text notes print verbatim.** They are the operator's own words about the job, not computed
+figures; no price, fee or margin field ever reaches the sheet. If an operator types a rupiah amount
+into a note, that is their text, not a revenue figure the product published.
+
+**Surat Jalan is available for every status except `CANCELED`.** The sheet travels with the berkas
+to SAMSAT, which happens before `PICKED_UP`; a canceled berkas never made that journey, and a
+printed control document for it invites confusion at the counter. Printing requires an active seat —
+it exposes the customer's KTP, so it is write-shaped even though nothing is written.
+
+## A27. Demo schedule of record (CEO 2026-11-04)
+
+Review window for Zidan: **Mon 23 – Fri 27 November 2026**, accepted against an original one-month
+target of 22 November — 1–5 days late, and stated as late rather than absorbed.
+
+Client-side dates, each with a consequence already decided:
+
+| Date | What Zidan owes | If it slips |
+|---|---|---|
+| Fri 6 Nov | Price confirmation, Rp 99.000 Basic / Rp 249.000 Pro | Missing confirmation means approved as shipped; the landing page and transfer instructions carry those numbers. |
+| Fri 13 Nov | The day inside 23–27 Nov he will review | The window moves, and the CEO says so on the day it slips. |
+| Fri 20 Nov | Drive access for backups and the 15-minute key handover | The demo holds; item 7 is shown **OPEN** with a follow-up date. Legal pages stay unpublished. |
+
+The approved client message closes by naming the next phase: after Zidan approves the review, the
+system is installed on his VPS, with the technical detail and access needs given only after that
+approval. `402` is not part of the contract; the guards are **403** (seat, entitlement) and **409**
+(`CANCELED`).
+
+**The gate does not move for a demo; it moves for publication.** Item 7 failing in the window is a
+true statement about the product, and the acceptance list carries it as open rather than passing it
+silently. Nothing false reaches the public: `/syarat-ketentuan` and `/kebijakan-privasi` stay
+unpublished until `scripts/backup.sh` has actually run and a restore has been performed.
