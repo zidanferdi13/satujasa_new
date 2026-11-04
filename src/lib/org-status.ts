@@ -61,6 +61,10 @@ export async function loadOrganizationStatus(
         pickedUpAt: { gte: range.start, lt: range.end },
       },
       _sum: { revenue: true },
+      // BUG-19: the count belongs to the same grouped read as the sum. `revenue` counts the rows
+      // that actually carry money, which is the same set the sum is taken over — an unpriced
+      // picked-up file is excluded from both, never counted as work with no money attached.
+      _count: { revenue: true },
     }),
   ]);
 
@@ -74,6 +78,7 @@ export async function loadOrganizationStatus(
     byOperatorRows.map((row) => ({
       operatorId: row.operatorId,
       operatorName: operatorNames.find((operator) => operator.id === row.operatorId)?.name ?? "",
+      files: row._count.revenue,
       revenue: row._sum.revenue,
     }))
   );

@@ -87,7 +87,10 @@ async function main() {
 
   const owner = await prisma.user.upsert({
     where: { email: OWNER.email },
-    update: {},
+    // BUG-20: demo passwords are seed data too. Without the hash here, a reseed kept whatever
+    // bcrypt string an earlier run wrote, so `demo1234` in the runbook was true only on a virgin
+    // database — the one state the demo never starts from.
+    update: { passwordHash },
     create: { email: OWNER.email, name: OWNER.name, passwordHash },
   });
 
@@ -154,7 +157,7 @@ async function main() {
 
   const operatorUser = await prisma.user.upsert({
     where: { email: OPERATOR.email },
-    update: {},
+    update: { passwordHash },
     create: { email: OPERATOR.email, name: OPERATOR.name, passwordHash },
   });
   const operatorMember = await prisma.member.upsert({
@@ -220,7 +223,7 @@ async function main() {
   // promoted back rather than leaving the console unreachable.
   await prisma.user.upsert({
     where: { email: SUPER_ADMIN.email },
-    update: { platformRole: "SUPER_ADMIN" },
+    update: { platformRole: "SUPER_ADMIN", passwordHash },
     create: {
       email: SUPER_ADMIN.email,
       name: SUPER_ADMIN.name,

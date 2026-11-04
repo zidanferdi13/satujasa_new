@@ -19,6 +19,14 @@
 export type RevenueRow = {
   operatorId: string;
   operatorName: string;
+  /**
+   * How many berkas the row stands for. BUG-19: this used to be implicit — the reducer added one
+   * per row — which is only correct when every row *is* one file. It isn't: the database groups
+   * first, so four files arrive as one row and the report said "1 berkas" under four files' money.
+   * The count now travels with the sum, from the same query, so the two cannot describe different
+   * sets of berkas.
+   */
+  files: number;
   revenue: number | null;
 };
 
@@ -46,8 +54,9 @@ export function revenueByOperator(rows: readonly RevenueRow[]): RevenueReport {
 
   for (const row of rows) {
     // Unpriced cannot happen while `file-rules.ts` fills revenue at pickup; if it ever does, the
-    // file is counted nowhere rather than contributing a silent zero.
-    if (row.revenue === null) continue;
+    // file is counted nowhere rather than contributing a silent zero. The count arrives from the
+    // same grouped read as the sum, so it is null-safe for the same reason.
+    if (row.revenue === null || row.files === 0) continue;
 
     const current = map.get(row.operatorId) ?? {
       operatorId: row.operatorId,
@@ -55,7 +64,7 @@ export function revenueByOperator(rows: readonly RevenueRow[]): RevenueReport {
       files: 0,
       revenue: 0,
     };
-    current.files += 1;
+    current.files += row.files;
     current.revenue += row.revenue;
     map.set(row.operatorId, current);
   }

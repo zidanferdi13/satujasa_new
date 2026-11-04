@@ -3,9 +3,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { jakartaMonthKey, revenueByOperator } from "./revenue.ts";
 
-const picked = (revenue: number | null, operatorId = "op1", operatorName = "Andi") => ({
+const picked = (
+  revenue: number | null,
+  operatorId = "op1",
+  operatorName = "Andi",
+  files = 1
+) => ({
   operatorId,
   operatorName,
+  files,
   revenue,
 });
 
@@ -23,8 +29,36 @@ test("item 5: per-operator revenue sums paid minus SAMSAT cost, owner included",
   assert.equal(report.byOperator.find((row) => row.operatorId === "owner")?.revenue, 249_000);
 });
 
+test("BUG-19: four berkas behind one grouped row read as four, not one", () => {
+  // The database groups before we ever see a row: `_sum.revenue` and `_count.revenue` come back
+  // together, and the reducer spends the count instead of assuming one row means one file.
+  const report = revenueByOperator([picked(1_600_000, "op1", "Andi", 4)]);
+
+  assert.equal(report.byOperator[0].files, 4);
+  assert.equal(report.total.files, 4);
+  // The money is untouched by the count: four files at 400.000 is still 1.600.000.
+  assert.equal(report.total.revenue, 1_600_000);
+});
+
+test("BUG-19: an unpriced berkas is excluded from both the count and the sum", () => {
+  const report = revenueByOperator([
+    picked(1_600_000, "op1", "Andi", 4),
+    picked(null, "op1", "Andi", 0),
+  ]);
+
+  assert.equal(report.total.files, 4);
+  assert.equal(report.total.revenue, 1_600_000);
+});
+
+test("BUG-19: the count and the sum come from one grouped read", () => {
+  // If these ever drift apart, the card can say four berkas under three files' money.
+  const status = readFileSync(new URL("./org-status.ts", import.meta.url), "utf8");
+  assert.match(status, /_sum: \{ revenue: true \},[\s\S]*?_count: \{ revenue: true \},/);
+  assert.match(status, /files: row\._count\.revenue/);
+});
+
 test("item 5: a file with no revenue contributes to no total, not as a zero", () => {
-  const report = revenueByOperator([picked(null)]);
+  const report = revenueByOperator([picked(null, "op1", "Andi", 0)]);
 
   assert.deepEqual(report.byOperator, []);
   assert.deepEqual(report.total, { files: 0, revenue: 0 });
