@@ -5,6 +5,7 @@ import { badRequest } from "@/lib/http";
 import {
   buildExportPdf,
   buildWorkbook,
+  exportWhere,
   jakartaDayRange,
   type ExportFile,
 } from "@/lib/export";
@@ -35,13 +36,15 @@ export async function GET(request: Request) {
   const fromDay = params.get("from") ?? "";
   const toDay = params.get("to") ?? "";
 
+  // §19: a person picking dates reads this, so it is one sentence about dates rather than
+  // `UI.common.invalidInput`'s "something was wrong with the request".
   if (format !== "xlsx" && format !== "pdf") return badRequest(UI.common.invalidInput);
   const range = jakartaDayRange(fromDay, toDay);
-  if (!range) return badRequest(UI.common.invalidInput);
+  if (!range) return badRequest(UI.exp.errRange);
   const { start: from, end: toExclusive } = range;
 
   const files = await prisma.file.findMany({
-    where: { organizationId, createdAt: { gte: from, lt: toExclusive } },
+    where: exportWhere(organizationId, { start: from, end: toExclusive }),
     orderBy: { createdAt: "asc" },
     select: {
       createdAt: true,

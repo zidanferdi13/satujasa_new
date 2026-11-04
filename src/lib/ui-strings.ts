@@ -97,7 +97,32 @@ export const UI = {
     body: "Pilih paket untuk mulai mencatat berkas dan mengelola operator. Data Anda tetap tersimpan dan bisa diekspor.",
     operatorNote: "Operator tidak bisa login sampai langganan aktif.",
     planHeading: "Pilih Paket",
-    export: "Ekspor Data",
+  },
+
+  // §19 (A12, item 9): the owner's export page. `nav` is one key on two surfaces — the sidebar and
+  // the locked screen — and `title` stays separate so shortening the sidebar label later cannot
+  // shorten a heading.
+  exp: {
+    nav: "Ekspor Data",
+    title: "Ekspor Data",
+    subtitle:
+      "Unduh data berkas dalam rentang tanggal. File berisi data pelanggan termasuk NIK lengkap, jadi simpan di tempat yang aman.",
+    presetToday: "Hari Ini",
+    presetMonth: "Bulan Ini",
+    presetCustom: "Rentang Sendiri",
+    from: "Dari",
+    to: "Sampai",
+    tz: "Waktu Indonesia Barat (WIB).",
+    format: "Format",
+    formatXlsx: "Excel (.xlsx)",
+    formatPdf: "PDF (.pdf)",
+    download: "Unduh",
+    downloading: "Menyiapkan…",
+    failed: "File gagal dibuat. Silakan coba lagi.",
+    emptyTitle: "Tidak ada berkas pada rentang ini",
+    emptyBody: "Coba rentang tanggal lain, atau periksa apakah berkas diinput pada bulan tersebut.",
+    errRange:
+      "Tanggal tidak valid. Isi tanggal mulai dan tanggal akhir, dan pastikan tanggal mulai tidak melewati tanggal akhir.",
   },
 
   // §18 (A24): legal pages. Titles and links only — the body is docs/legal-id.md, placed verbatim

@@ -428,9 +428,10 @@ Reachable while locked. It is the only screen a locked owner can use; `/dashboar
 | sub.operatorNote | Operator tidak bisa login sampai langganan aktif. |
 | sub.planHeading | Pilih Paket |
 | sub.cards | reuse `PricingCards` (prices from `src/lib/plans.ts`) |
-| sub.export | Ekspor Data |
 
-State A — no payment yet: heading + `promise.core`/`promise.weekend` + cards. Basic/Pro buttons create the payment row and move to state B. Custom keeps "Hubungi Kami" → WhatsApp.
+State A — no payment yet: heading, `sub.body`, the export link, `promise.core`/`promise.weekend`, then cards. Basic/Pro buttons create the payment row and move to state B. Custom keeps "Hubungi Kami" → WhatsApp.
+
+The export link (`exp.nav`, §19) sits **directly under `sub.body`**, as an outline button with a `Download` icon — not a text link at the bottom. `sub.body` is the sentence that promises export (A12), and a promise followed by the thing that keeps it, two lines apart, is the only arrangement where a locked owner finds it. The link is additive: it renders whenever the locked screen renders, in every state, because export does not depend on the subscription.
 
 State B — `UNPAID`:
 
@@ -616,3 +617,56 @@ Layout:
 - `legal.updated` comes from one constant per page; the file has no version archive (§1.7), so the date is the only change signal.
 - `reg.legalAgree`: under the register button, `text-sm --muted-foreground`, both links open in a new tab so the half-filled form survives. Statement, not a checkbox; the page already states agreement on submit.
 - Footer links render only once the pages ship (A16 no dead links). Both pages go public only after `scripts/backup.sh` has run once (legal-id.md build notes).
+
+## 19. Export page — `/dashboard/owner/export` (A12, item 9)
+
+A page, not a dialog: a date range with a result state and a downloadable file needs a URL the owner can return to, and a modal cannot be linked from the locked screen.
+
+| Key | Indonesian | Where |
+|---|---|---|
+| exp.nav | Ekspor Data | sidebar and the locked-screen link — one key, two surfaces (supersedes `sub.export`, which is removed) |
+| exp.title | Ekspor Data | page heading |
+| exp.subtitle | Unduh data berkas dalam rentang tanggal. File berisi data pelanggan termasuk NIK lengkap, jadi simpan di tempat yang aman. | under the heading |
+| exp.presetToday | Hari Ini | preset |
+| exp.presetMonth | Bulan Ini | preset |
+| exp.presetCustom | Rentang Sendiri | state caption |
+| exp.from | Dari | field |
+| exp.to | Sampai | field |
+| exp.tz | Waktu Indonesia Barat (WIB). | under the fields |
+| exp.format | Format | fieldset legend |
+| exp.formatXlsx | Excel (.xlsx) | radio |
+| exp.formatPdf | PDF (.pdf) | radio |
+| exp.download | Unduh | primary action |
+| exp.downloading | Menyiapkan… | button, while building |
+| exp.failed | File gagal dibuat. Silakan coba lagi. | result area |
+| exp.emptyTitle | Tidak ada berkas pada rentang ini | result area |
+| exp.emptyBody | Coba rentang tanggal lain, atau periksa apakah berkas diinput pada bulan tersebut. | result area |
+| exp.errRange | Tanggal tidak valid. Isi tanggal mulai dan tanggal akhir, dan pastikan tanggal mulai tidak melewati tanggal akhir. | 400 body from `/api/export` |
+
+`exp.errRange` replaces `UI.common.invalidInput` for both malformed and inverted ranges. The API's current body ("Data yang dikirim tidak valid") is a message for a bug report, not for a person picking dates.
+
+`exp.title` and `exp.nav` are separate keys with identical text today. If the sidebar later shortens the label, a heading reading "Ekspor" would be a worse heading; two keys cost nothing and keep that decision open.
+
+**Interaction — presets fill, they do not download.**
+
+`Hari Ini` and `Bulan Ini` set `from`/`to` and mark themselves `aria-pressed`; they do not fetch. Only `Unduh` produces a file.
+
+That is deliberate. This file contains every customer NIK in the range (A17's masking exception), and a preset that downloads on click turns a date picker into a one-click personal-data export — on the screen where a person is most likely to be clicking around. One action, one file, and the range is visible and correctable before it happens.
+
+- Presets are buttons, not links. A link would reload the page, and the result state with it.
+- When the dates match neither preset, both are unpressed and `exp.presetCustom` shows next to the fields, `text-sm --muted-foreground`. There is no third button: `Rentang Sendiri` does nothing a user wants (the fields are already editable) and a control that produces no visible change is worse than a caption that says where you are.
+- Presets compute in Jakarta time, so `Hari Ini` on a device set to UTC+9 still means the Jakarta day. The date fields are `<input type="date">`; the range is inclusive at both ends.
+- Format is a radio group — two options, both visible, no menu to open. Default `Excel (.xlsx)`: a spreadsheet is what export is for. PDF is for a printed record.
+- `Unduh` is a `<a href="/api/export?format=…&from=…&to=…">`, not a `fetch` blob: the browser's own download UI handles progress, cancel and retry, and a failed request gets a real page. While the request is out the link disables and reads `exp.downloading`; there is no spinner-only state.
+- No toast on success. A file appearing in the download shelf is the feedback.
+- Result area below the form, `aria-live="polite"`: `exp.emptyTitle` + `exp.emptyBody` when the range yields nothing, `exp.failed` on a 5xx. An empty range is not an error — nothing is red, and the dates stay filled.
+
+**Layout.** Dashboard shell, `max-w-3xl`, one card, in this order: presets row · `Dari` / `Sampai` side by side (stacked under 768px) · `exp.tz` · `Format` radios · `Unduh`. No revenue, no counts, no KTP on screen — this page exports data, it does not display it.
+
+**Placement and reachability.**
+- Sidebar: owner nav, after `Berkas`, label `exp.nav`, `Download` icon.
+- Locked screen: the position described in §15 — immediately under `sub.body`, same `exp.nav` key.
+- **No entitlement gate on `/dashboard/owner/export` (A12).** An unentitled owner must reach it; a gate would make `sub.body`'s "Data Anda tetap tersimpan dan bisa diekspor" false on the one screen that says it.
+- **Consequence for the owner sidebar:** while unentitled, every other owner link redirects to the locked screen, so the sidebar must render only `exp.nav` (plus sign-out) instead of a column of links that bounce. A19: no dead links includes links that only look alive.
+
+**Notes for Developer.** Filename comes from the API (`berkas-{from}_{to}`) — leave it. `format` is `xlsx`/`pdf`, `from`/`to` are `YYYY-MM-DD`. Do not add an entitlement check to the route or the page; do not mount this page as a dialog on `/dashboard/owner`, which redirects when locked and would hide the link's destination.

@@ -5,15 +5,22 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { MemberRole } from "@prisma/client";
-import { Building2, FolderOpen, LayoutDashboard, LogOut, ReceiptText } from "lucide-react";
+import { Building2, Download, FolderOpen, LayoutDashboard, LogOut, ReceiptText } from "lucide-react";
 import { UI } from "@/lib/ui-strings";
 import type { SessionRole } from "@/lib/access";
 
 // A16: only routes that exist. Berkas opened in M3; Operators, Pendapatan and Pengaturan return
 // with the milestone that builds their page, in the same commit as the route.
+// §19: export is the one owner route that works while the subscription is lapsed (A12), so it is
+// also the only link a locked owner gets. The rest would redirect straight back to the locked
+// screen — A19's "no dead links" covers links that only look alive.
 const ownerNavItems = [
   { href: "/dashboard/owner", label: UI.nav.dashboard, icon: LayoutDashboard, exact: true },
   { href: "/dashboard/owner/files", label: UI.nav.files, icon: FolderOpen, exact: false },
+  { href: "/dashboard/owner/export", label: UI.exp.nav, icon: Download, exact: false },
+];
+const ownerLockedNavItems = [
+  { href: "/dashboard/owner/export", label: UI.exp.nav, icon: Download, exact: false },
 ];
 const operatorNavItems = [
   { href: "/dashboard/operator", label: UI.nav.dashboard, icon: LayoutDashboard, exact: true },
@@ -25,11 +32,23 @@ const adminNavItems = [
   { href: "/dashboard/admin/organizations", label: UI.adm.navOrgs, icon: Building2, exact: false },
 ];
 
-export function DashboardSidebar({ role }: { role: SessionRole }) {
+export function DashboardSidebar({
+  role,
+  entitled = true,
+}: {
+  role: SessionRole;
+  entitled?: boolean;
+}) {
   const pathname = usePathname();
   const isAdmin = role === "SUPER_ADMIN";
   const isOwner = role === MemberRole.OWNER;
-  const navItems = isAdmin ? adminNavItems : isOwner ? ownerNavItems : operatorNavItems;
+  const navItems = isAdmin
+    ? adminNavItems
+    : isOwner
+      ? entitled
+        ? ownerNavItems
+        : ownerLockedNavItems
+      : operatorNavItems;
 
   return (
     <aside className="w-64 border-r bg-white">

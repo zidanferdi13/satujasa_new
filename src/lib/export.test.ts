@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as XLSX from "xlsx";
+import { readFileSync } from "node:fs";
 import {
   EXPORT_COLUMNS,
   buildWorkbook,
+  defaultExportRange,
   exportHeaders,
   exportRows,
   exportSheet,
+  exportWhere,
+  jakartaDayKey,
   jakartaDayRange,
   type ExportFile,
 } from "./export.ts";
@@ -113,4 +117,63 @@ test("a malformed or inverted day range is refused rather than guessed", () => {
   const oneDay = jakartaDayRange("2026-11-04", "2026-11-04");
   assert.ok(oneDay);
   assert.equal(oneDay.end.getTime() - oneDay.start.getTime(), 24 * 60 * 60 * 1000);
+});
+
+test("§19: the page opens on the Jakarta month to date, not the UTC one", () => {
+  // 18:30 UTC on 31 October is already 01:30 on 1 November in Jakarta. A page in UTC would open on
+  // October and offer the owner a range that ends in the wrong month.
+  const boundary = new Date("2026-10-31T18:30:00Z");
+  assert.equal(jakartaDayKey(boundary), "2026-11-01");
+  assert.deepEqual(defaultExportRange(boundary), { from: "2026-11-01", to: "2026-11-01" });
+
+  const midMonth = new Date("2026-11-04T03:15:00Z");
+  assert.deepEqual(defaultExportRange(midMonth), { from: "2026-11-01", to: "2026-11-04" });
+});
+
+test("§19: the count on the page and the file's contents share one predicate", () => {
+  // If these were two queries, the page could report "3 berkas" above a file holding four — the
+  // same failure as the per-operator count, one layer up.
+  const route = readFileSync(new URL("../app/api/export/route.ts", import.meta.url), "utf8");
+  const page = readFileSync(
+    new URL("../app/dashboard/owner/export/page.tsx", import.meta.url),
+    "utf8"
+  );
+  assert.match(route, /where: exportWhere\(/);
+  assert.match(page, /exportWhere\(/);
+  // Neither may hand-roll the range again.
+  assert.doesNotMatch(route, /createdAt: \{ gte/);
+  assert.doesNotMatch(page, /createdAt: \{ gte/);
+
+  const range = jakartaDayRange("2026-11-01", "2026-11-04");
+  assert.ok(range);
+  assert.deepEqual(exportWhere("org-1", range), {
+    organizationId: "org-1",
+    createdAt: { gte: range.start, lt: range.end },
+  });
+});
+
+test("§19/A12: the export page carries no entitlement gate", () => {
+  // "Data Anda tetap tersimpan dan bisa diekspor" is on the locked screen, which links here. A gate
+  // on this route would make that sentence false on the only screen that says it.
+  const page = readFileSync(
+    new URL("../app/dashboard/owner/export/page.tsx", import.meta.url),
+    "utf8"
+  ).replace(/\/\*[\s\S]*?\*\//g, ""); // the comment that explains *why* there is no gate
+  assert.doesNotMatch(page, /organizationIsEntitled/);
+  assert.doesNotMatch(page, /dashboard\/subscription/);
+
+  // The link from the locked screen exists, and it points at that page.
+  const locked = readFileSync(
+    new URL("../app/dashboard/subscription/subscribe-client.tsx", import.meta.url),
+    "utf8"
+  );
+  assert.match(locked, /href="\/dashboard\/owner\/export"/);
+});
+
+test("§19: a malformed or inverted range answers in the owner's words", () => {
+  const route = readFileSync(new URL("../app/api/export/route.ts", import.meta.url), "utf8");
+  assert.match(route, /badRequest\(UI\.exp\.errRange\)/);
+  // The old body is a message for whoever reads the server log, not for someone picking dates.
+  assert.match(UI.exp.errRange, /Tanggal tidak valid/);
+  assert.notEqual(UI.exp.errRange, UI.common.invalidInput);
 });

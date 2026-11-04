@@ -106,6 +106,29 @@ export const EXPORT_COLUMNS: readonly Column[] = [
  * that offset rather than from the server's clock zone; `end` is exclusive, which is what makes an
  * inclusive "1 sampai 30" one comparison instead of an off-by-a-millisecond.
  */
+/**
+ * The one predicate both the download and the page's count use. Two copies of "which berkas are in
+ * this range" would let the page say "3 berkas" above a file containing four, which is the same
+ * failure the count column had: two answers to one question.
+ */
+export function exportWhere(
+  organizationId: string,
+  range: { start: Date; end: Date }
+): { organizationId: string; createdAt: { gte: Date; lt: Date } } {
+  return { organizationId, createdAt: { gte: range.start, lt: range.end } };
+}
+
+/** The Jakarta calendar day a moment falls on, as `YYYY-MM-DD`. WIB has no daylight saving. */
+export function jakartaDayKey(date: Date): string {
+  return new Date(date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** §19: the page opens on the current Jakarta month to date — the range an owner means by "bulan ini". */
+export function defaultExportRange(now: Date): { from: string; to: string } {
+  const today = jakartaDayKey(now);
+  return { from: `${today.slice(0, 7)}-01`, to: today };
+}
+
 export function jakartaDayRange(
   fromDay: string,
   toDay: string

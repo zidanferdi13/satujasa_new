@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
+import { Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PricingCards } from "@/components/landing/pricing-cards";
@@ -27,7 +29,17 @@ function PlanChooser({ onSelect, busy }: { onSelect: (plan: PlanId) => void; bus
   return (
     <div className="max-w-5xl">
       <h1 className="text-3xl font-bold mb-2">{UI.sub.title}</h1>
-      <p className="text-muted-foreground mb-1">{UI.sub.body}</p>
+      <p className="text-muted-foreground mb-3">{UI.sub.body}</p>
+      {/* §19: directly under the sentence that promises it. The promise and the way to keep it,
+          two lines apart — and it renders in every locked state, because export does not depend on
+          the subscription (A12). A link, not a button: it goes to a page. */}
+      <Link
+        href="/dashboard/owner/export"
+        className="mb-4 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+      >
+        <Download className="h-4 w-4" aria-hidden="true" />
+        {UI.exp.nav}
+      </Link>
       {/* A21: place 1 of 3 — same two keys as the FAQ and the Terms page. */}
       <p className="text-muted-foreground mb-1">{UI.promise.core}</p>
       <p className="text-muted-foreground mb-1">{UI.promise.weekend}</p>
