@@ -561,3 +561,8 @@ The API is a backstop for a bookmark, not a screen.
 
 The export carries no totals row. A sum printed on the sheet would be a third income figure, and A26
 allows exactly two.
+
+Two cosmetic consequences, both accepted, neither a defect: `Total Dibayar Pelanggan` wraps to two
+lines in the PDF now that the width budget is split twelve ways, and a header that wraps is still a
+header. Column widths were not rebalanced to fix it — trading a money column's width for one label's
+line count is the wrong direction on a sheet that will be printed as a record.
