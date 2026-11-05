@@ -541,3 +541,23 @@ approval. `402` is not part of the contract; the guards are **403** (seat, entit
 true statement about the product, and the acceptance list carries it as open rather than passing it
 silently. Nothing false reaches the public: `/syarat-ketentuan` and `/kebijakan-privasi` stay
 unpublished until `scripts/backup.sh` has actually run and a restore has been performed.
+
+## A28. Export is a record dump, not an income report (PM 2026-11-05)
+
+The export filters on `createdAt` ("Diinput pada") because it is a list of berkas as entered, and an
+owner looking for a file thinks in terms of when he typed it in. Revenue (A26) filters on
+`pickedUpAt` because money moves at pickup. Those two dates are not the same date, so a monthly
+export's `serviceFee` column will not sum to the revenue card over the same calendar month — and that
+difference is correct, not a bug in either.
+
+Because the two figures will be compared anyway, **the export carries both dates**: `createdAt` first,
+`pickedUpAt` immediately after it, blank when the berkas has not been picked up, using the existing
+`UI.file.pickedUpAt` label. An owner can then see which month a row's money belongs to without
+arithmetic in his head, and nobody has to explain a discrepancy that the file itself resolves.
+
+**A header-only workbook is still what `/api/export` returns for an empty range**, reachable only by
+typing the URL: the page refuses the download first, using the same `exportWhere` count as the file.
+The API is a backstop for a bookmark, not a screen.
+
+The export carries no totals row. A sum printed on the sheet would be a third income figure, and A26
+allows exactly two.
