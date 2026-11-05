@@ -528,7 +528,7 @@ Client-side dates, each with a consequence already decided:
 
 | Date | What Zidan owes | If it slips |
 |---|---|---|
-| Fri 6 Nov | Price confirmation, Rp 99.000 Basic / Rp 249.000 Pro | Missing confirmation means approved as shipped; the landing page and transfer instructions carry those numbers. |
+| Fri 6 Nov | Price confirmation, Rp 99.000 Basic / Rp 249.000 Pro | **Closed 2026-11-05: Zidan confirmed.** Both numbers are final and appear on the landing page, the locked screen and the transfer instructions. |
 | Fri 13 Nov | The day inside 23–27 Nov he will review | The window moves, and the CEO says so on the day it slips. |
 | Fri 20 Nov | Drive access for backups and the 15-minute key handover | The demo holds; item 7 is shown **OPEN** with a follow-up date. Legal pages stay unpublished. |
 

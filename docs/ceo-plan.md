@@ -6,7 +6,8 @@ second source of truth. Where the two ever disagree, the amendment wins.
 
 Owner of this plan: CEO (Thread 2). Maintained by: Project Manager (Thread 3).
 Client: Zidan Ferdiansyah, perorangan, Kab. Bekasi, Jawa Barat.
-Status line: **2026-11-05 — M4 awaiting QA close, M5 items 8 and 9 built, item 7 blocked on the client.**
+Status line: **2026-11-05 — M4 closed at `a9643d9`, M5 items 8 and 9 passed, prices confirmed by the
+client, item 7 blocked on the client.**
 
 ---
 
@@ -47,8 +48,11 @@ receipt-upload flow came in. Recorded rather than dressed up (A27).
 | Custom | "Hubungi Kami" → WhatsApp | provisioned manually by the Super Admin |
 
 Monthly billing only. **No free trial. No proration. No downgrade while a higher plan is active.**
-Only the CEO may change these numbers. If Zidan has not confirmed them by **Fri 6 Nov**, they ship as
-approved (A27).
+Only the CEO may change these numbers.
+
+**Confirmed by Zidan on 2026-11-05** — a day before the deadline, and final. The landing page, the
+locked screen and the transfer instructions all carry these two figures; there is no second price
+table anywhere in the product.
 
 ## 4. How a customer pays
 
@@ -175,5 +179,5 @@ the private key next to the dumps, **no agency copy is kept after handover** (A2
 - **Item 7** — backup run and restore: needs Zidan's Drive destination and the key handover by **20 Nov**.
 - **Item 9** — export built; awaiting QA and the empty-range fix.
 - **Item 8** — legal pages built; publication waits for deployment.
-- **Client** — price confirmation by **6 Nov**; review day by **13 Nov**.
+- **Client** — prices confirmed 5 Nov (closed); review day by **13 Nov**; Drive and key handover by **20 Nov**.
 - **Polish** — last, and the first thing to give up if a date gets tight.
