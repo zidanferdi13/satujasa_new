@@ -15,6 +15,8 @@ import { UI } from "./ui-strings.ts";
 
 export type ExportFile = {
   createdAt: Date;
+  /** Null until the berkas is picked up: an unpicked berkas has no pickup date to show. */
+  pickedUpAt: Date | null;
   customerName: string;
   customerKtp: string;
   vehicleNumber: string;
@@ -38,14 +40,28 @@ type Column = {
 const money = (amount: number | null) => (amount === null ? 0 : amount);
 
 /**
- * Order is the order the owner reads a berkas in: when, who, what vehicle, what was done, where it
- * stands, who did it, then the three money columns in the same order as the file form.
+ * Order is the order the owner reads a berkas in: when it was entered, when it was picked up, who,
+ * what vehicle, what was done, where it stands, who did it, then the three money columns in the same
+ * order as the file form. Both dates sit together at the front because the pair is the point (A28).
  */
 export const EXPORT_COLUMNS: readonly Column[] = [
   {
     header: UI.file.createdAt,
     text: (f) => formatJakartaDate(f.createdAt),
     cell: (f) => formatJakartaDate(f.createdAt),
+  },
+  {
+    /**
+     * A28: the export is a record dump keyed on createdAt, revenue is summed on pickedUpAt, so the
+     * two numbers for "this month" legitimately differ. Both dates in the file let the owner see
+     * for himself which rows belong to which month instead of hearing an explanation at the demo.
+     *
+     * Empty, never borrowed: a berkas that has not been picked up gets a blank cell, because
+     * writing createdAt here would invent a pickup that never happened.
+     */
+    header: UI.file.pickedUpAt,
+    text: (f) => (f.pickedUpAt === null ? "" : formatJakartaDate(f.pickedUpAt)),
+    cell: (f) => (f.pickedUpAt === null ? "" : formatJakartaDate(f.pickedUpAt)),
   },
   {
     header: UI.file.customerName,
@@ -180,7 +196,7 @@ export function buildExportPdf(
     doc.on("error", reject);
 
     const width = doc.page.width - 56;
-    const weights = [9, 16, 14, 11, 11, 10, 11, 9, 12, 10, 9];
+    const weights = [9, 9, 15, 13, 11, 11, 10, 11, 9, 12, 10, 9];
     const total = weights.reduce((sum, weight) => sum + weight, 0);
     const widths = weights.map((weight) => (width * weight) / total);
     const padding = 3;

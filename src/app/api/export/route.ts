@@ -48,6 +48,7 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "asc" },
     select: {
       createdAt: true,
+      pickedUpAt: true,
       customerName: true,
       customerKtp: true,
       vehicleNumber: true,
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
 
   const rows: ExportFile[] = files.map((file) => ({
     createdAt: file.createdAt,
+    pickedUpAt: file.pickedUpAt,
     customerName: file.customerName,
     customerKtp: file.customerKtp,
     vehicleNumber: file.vehicleNumber,

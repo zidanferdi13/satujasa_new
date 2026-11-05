@@ -15,9 +15,11 @@ import {
   type ExportFile,
 } from "./export.ts";
 import { UI } from "./ui-strings.ts";
+import { formatJakartaDate } from "./date-format.ts";
 
 const file = (over: Partial<ExportFile> = {}): ExportFile => ({
   createdAt: new Date("2026-11-04T03:15:00Z"),
+  pickedUpAt: new Date("2026-11-04T09:40:00Z"),
   customerName: "Budi Santoso",
   // A NIK with a leading zero: the case that turns into 8 digits if it ever becomes a number.
   customerKtp: "0320000000000001",
@@ -47,41 +49,41 @@ test("headers come from the approved strings, not from field names", () => {
 
 test("the owner gets the full KTP, and only as text", () => {
   const [row] = exportRows([file()]);
-  assert.equal(row[2], "0320000000000001");
+  assert.equal(row[3], "0320000000000001");
   const [sheetRow] = exportSheet([file()]);
-  assert.equal(sheetRow[2], "0320000000000001");
-  assert.equal(typeof sheetRow[2], "string");
+  assert.equal(sheetRow[3], "0320000000000001");
+  assert.equal(typeof sheetRow[3], "string");
   // Masking here would defeat the export's only purpose (A17).
-  assert.doesNotMatch(String(row[2]), /•/);
+  assert.doesNotMatch(String(row[3]), /•/);
 });
 
 test("ownership and service render as labels, status as its display word", () => {
   const [row] = exportRows([file({ ownershipType: "YAYASAN", serviceType: "SIM_B", status: "CANCELED" })]);
-  assert.equal(row[4], "Yayasan");
-  assert.equal(row[5], "SIM B");
-  assert.equal(row[6], "Dibatalkan");
+  assert.equal(row[5], "Yayasan");
+  assert.equal(row[6], "SIM B");
+  assert.equal(row[7], "Dibatalkan");
 });
 
 test("money is a number in the spreadsheet and rupiah text on the printed sheet", () => {
   const [sheetRow] = exportSheet([file()]);
-  assert.equal(sheetRow[8], 1_500_000);
-  assert.equal(sheetRow[9], 1_100_000);
-  assert.equal(sheetRow[10], 400_000);
+  assert.equal(sheetRow[9], 1_500_000);
+  assert.equal(sheetRow[10], 1_100_000);
+  assert.equal(sheetRow[11], 400_000);
 
   const [row] = exportRows([file()]);
-  assert.equal(row[8], "Rp 1.500.000");
-  assert.equal(row[10], "Rp 400.000");
+  assert.equal(row[9], "Rp 1.500.000");
+  assert.equal(row[11], "Rp 400.000");
 });
 
 test("an unpriced berkas is blank, never zero", () => {
   const unpriced = file({ status: "DRAFT", finalPrice: null, samsatPayment: null, serviceFee: null });
   const [row] = exportRows([unpriced]);
-  assert.equal(row[8], "");
   assert.equal(row[9], "");
   assert.equal(row[10], "");
+  assert.equal(row[11], "");
   // The workbook still needs a numeric cell for those columns, so Excel can sum them.
   const [sheetRow] = exportSheet([unpriced]);
-  assert.equal(sheetRow[8], 0);
+  assert.equal(sheetRow[9], 0);
 });
 
 test("the workbook is a real xlsx with one header row and every berkas", () => {
@@ -93,7 +95,7 @@ test("the workbook is a real xlsx with one header row and every berkas", () => {
   assert.deepEqual(matrix[0], exportHeaders());
   assert.equal(matrix.length, 3);
   // Leading zero survives the round trip: this is why the cell is written as text.
-  assert.equal(String(matrix[1][2]), "0320000000000001");
+  assert.equal(String(matrix[1][3]), "0320000000000001");
 });
 
 test("the day range is Jakarta midnight to the next Jakarta midnight, end exclusive", () => {
@@ -191,4 +193,49 @@ test("§19/PM: an empty range renders no download control at all", () => {
   assert.ok(anchor > gate, "the anchor comes after the count gate, inside its branch");
   // No second, ungated anchor: exactly one download link on the page.
   assert.equal(form.split("href={`/api/export?").length - 1, 1);
+});
+
+test("A28: the export carries both dates, in the same format, and never borrows one", () => {
+  const headers = exportHeaders();
+  assert.equal(headers.length, 12);
+  assert.equal(headers[0], UI.file.createdAt);
+  assert.equal(headers[1], UI.file.pickedUpAt);
+  assert.equal(headers[2], UI.file.customerName);
+
+  // One formatter for both date columns: the same instant renders identically in either slot.
+  const same = new Date("2026-11-04T09:40:00Z");
+  const [row] = exportRows([file({ createdAt: same, pickedUpAt: same })]);
+  assert.equal(row[0], row[1]);
+  assert.equal(row[1], formatJakartaDate(same));
+  const [sheetRow] = exportSheet([file({ createdAt: same, pickedUpAt: same })]);
+  assert.equal(sheetRow[0], sheetRow[1]);
+});
+
+test("A28: a berkas not yet picked up leaves the pickup column empty, not createdAt", () => {
+  const waiting = file({ status: "ON_PROGRESS_SAMSAT", pickedUpAt: null });
+  const [row] = exportRows([waiting]);
+  assert.equal(row[1], "");
+  const [sheetRow] = exportSheet([waiting]);
+  assert.equal(sheetRow[1], "");
+  // The absence must not be papered over with the input date in either writer.
+  assert.notEqual(row[1], row[0]);
+  assert.notEqual(sheetRow[1], sheetRow[0]);
+});
+
+test("A28: a canceled berkas is still exported, with the date it was entered", () => {
+  const canceled = file({ status: "CANCELED", pickedUpAt: null });
+  const workbook = XLSX.read(buildWorkbook([canceled]), { type: "buffer" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const matrix = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, raw: false });
+  assert.equal(matrix.length, 2);
+  assert.equal(matrix[1][7], "Dibatalkan");
+  assert.equal(matrix[1][1], "");
+});
+
+test("A28: no totals row — the sheet is rows only", () => {
+  const workbook = XLSX.read(buildWorkbook([file(), file()]), { type: "buffer" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const matrix = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, raw: false });
+  assert.equal(matrix.length, 3);
+  assert.equal(matrix[0].length, 12);
 });
