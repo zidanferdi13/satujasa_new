@@ -177,3 +177,18 @@ test("§19: a malformed or inverted range answers in the owner's words", () => {
   assert.match(UI.exp.errRange, /Tanggal tidak valid/);
   assert.notEqual(UI.exp.errRange, UI.common.invalidInput);
 });
+
+test("§19/PM: an empty range renders no download control at all", () => {
+  // Absent, not disabled. A header-only workbook reads as a broken export, and the empty state sits
+  // directly above it — so the anchor must live strictly inside the `rows > 0` branch.
+  const form = readFileSync(
+    new URL("../app/dashboard/owner/export/export-form.tsx", import.meta.url),
+    "utf8"
+  );
+  const gate = form.indexOf("rows > 0 ?");
+  assert.ok(gate > -1, "the download action is gated on the row count");
+  const anchor = form.indexOf("href={`/api/export?");
+  assert.ok(anchor > gate, "the anchor comes after the count gate, inside its branch");
+  // No second, ungated anchor: exactly one download link on the page.
+  assert.equal(form.split("href={`/api/export?").length - 1, 1);
+});

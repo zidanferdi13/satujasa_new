@@ -133,7 +133,13 @@ export function ExportForm({
       </fieldset>
 
       <div className="mt-6">
-        {rangeValid ? (
+        {/* PM ruling: with no berkas in the range the action is absent, not disabled — the same
+            rule as Cetak Surat Jalan on a cancelled berkas and Ubah for a seatless owner. A
+            header-only workbook reads as a broken export, and an empty-state heading above a
+            download of nothing is the contradiction the shared count exists to prevent. */}
+        {!rangeValid ? (
+          <p className="text-sm text-destructive">{UI.exp.errRange}</p>
+        ) : rows > 0 ? (
           <a
             href={`/api/export?format=${formatValue}&from=${fromValue}&to=${toValue}`}
             onClick={() => setDownloading(true)}
@@ -142,9 +148,7 @@ export function ExportForm({
             <Download className="h-4 w-4" aria-hidden="true" />
             {downloading ? UI.exp.downloading : UI.exp.download}
           </a>
-        ) : (
-          <p className="text-sm text-destructive">{UI.exp.errRange}</p>
-        )}
+        ) : null}
       </div>
 
       {/* An empty range is not an error: nothing is red, the dates stay, and the file still exists. */}
